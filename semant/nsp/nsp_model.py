@@ -16,7 +16,8 @@ class NSPModel(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(768, 64),
             nn.ReLU(),
-            nn.Linear(64, 1)
+            nn.Linear(64, 1),
+            nn.Sigmoid(),
         )
     
     def forward(self, inputs):

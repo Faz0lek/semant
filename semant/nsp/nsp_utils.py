@@ -4,8 +4,12 @@ Date -- 24.05.2023
 Author -- Martin Kostelnik
 """
 
+import typing
+
+from sklearn import metrics
+
+
 CZERT_PATH = r"UWB-AIR/Czert-B-base-cased"
-MODELS_PATH = r"../../models"
 
 
 def load_data(path: str):
@@ -15,3 +19,30 @@ def load_data(path: str):
                  ["Brno je nejlepší město v České republice", "Na cestě stojí auto.", 1]]
 
     return sentences
+
+
+def evaluate(ground_truth: list, predictions: list) -> None:
+    """Compare predictions with ground truth and print metrics.
+
+        Parameters
+        ----------
+        ground_truth : list
+            Ground truth values
+        predictions : list
+            Model predictions
+    """
+
+    print(metrics.classification_report(ground_truth, predictions, target_names=["IsNextStc", "IsNotNextStc"], digits=4))
+    print(f"AUC = {metrics.roc_auc_score(ground_truth, predictions):.4f}\n")
+
+    fpr, tpr, threshold = metrics.roc_curve(ground_truth, predictions)
+    
+    plt.clf()
+    plt.title(f"ROC")
+    plt.plot(fpr, tpr, "b")
+    plt.plot([0, 1], [0, 1],"r--")
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+    plt.ylabel("True Positive Rate")
+    plt.xlabel("False Positive Rate")
+    plt.savefig("ROC.pdf")
