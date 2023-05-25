@@ -20,6 +20,7 @@ class CzertNSP(nn.Module):
             nn.Linear(768, 64),
             nn.ReLU(),
             nn.Linear(64, 1),
+            nn.Sigmoid(),
         )
 
     def forward(self, input_ids, token_type_ids, attention_mask):

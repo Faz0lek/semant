@@ -1,2 +1,6 @@
 venv/
 semant.egg-info/
+__pycache__/
+mount.sh
+unmount.sh
+models/
