@@ -11,10 +11,11 @@ from nsp_utils import CZERT_PATH
 
 
 class CzertNSP(nn.Module):
-    def __init__(self):
+    def __init__(self, embeddings_size: int):
         super(CzertNSP, self).__init__()
 
         self.czert = BertModel.from_pretrained(CZERT_PATH)
+        self.czert.resize_token_embeddings(embeddings_size)
 
         self.classifier = nn.Sequential(
             nn.Linear(768, 64),
