@@ -15,11 +15,12 @@ SAVE_DIR=$BASE/models
 mkdir -p $SAVE_DIR
 
 python -u $SCRIPTS_DIR/train.py \
-    --data asdf \
+    --data $BASE/data/periodicals_dataset.short.txt \
     --czert \
     --epochs 5 \
-    --batch-size 2 \
+    --batch-size 16 \
     --lr 1e-4 \
     --save-path $SAVE_DIR \
-    --view-step 1
-    # --model-path $SAVE_DIR/checkpoint_005.pth
+    --view-step 100 \
+    --split 0.8 \
+    --model-path $SAVE_DIR/checkpoint_005.pth
