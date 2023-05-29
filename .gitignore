@@ -4,3 +4,4 @@ __pycache__/
 mount.sh
 unmount.sh
 models/
+data/
