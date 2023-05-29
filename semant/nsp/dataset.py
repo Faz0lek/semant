@@ -20,7 +20,7 @@ class NSPDataset(torch.utils.data.Dataset):
         tokenizer_output = self.tokenizer(
             sen1,
             sen2,
-            max_length=50,
+            max_length=100,
             padding="max_length",
             return_tensors="pt")
 
