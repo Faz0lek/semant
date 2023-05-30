@@ -30,6 +30,7 @@ def parse_arguments():
     parser.add_argument("--data", required=True, help="Path to txt file with preprocessed data.")
     parser.add_argument("--out", required=True, help="Path to output file.")
     parser.add_argument("--balanced", action="store_true", help="Whether the dataset should be balanced. If not using balanced dataset, every possible wrong combination of lines will be generated from a given region.")
+    parser.add_argument("--header", action="store_true", help="Whether regions in preprocessed file contain header. If set, removes the header.")
 
     args = parser.parse_args()
     return args
@@ -45,6 +46,12 @@ def main(args):
         for region in regions:
             lines = region.split("\n")
             region_samples = ""
+
+            # Filter out header
+            if args.header:
+                lines = lines[1:]
+                if len(lines) < 2:
+                    continue
 
             # Generate positive samples
             n_samples = 0
