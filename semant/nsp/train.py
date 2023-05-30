@@ -25,7 +25,8 @@ def parse_arguments():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--data", required=True, help="Path to dataset.")
+    parser.add_argument("--train", required=True, help="Path to train dataset.")
+    parser.add_argument("--test", required=True, help="Path to test dataset.")
     parser.add_argument("--czert", action="store_true", help="Train baseline CZERT instead of our model.")
 
     parser.add_argument("--epochs", type=int, default=1, help="Number of epochs.")
@@ -41,6 +42,26 @@ def parse_arguments():
     return args
 
 
+def prepare_loaders(train_path: str, test_path: str, tokenizer, batch_size: int, ratio: float) -> tuple:
+    print(f"Loading train data from {train_path} ...")
+    data_train = load_data(train_path)
+    dataset = NSPDataset(data_train, tokenizer)
+
+    train_dataset, val_dataset = torch.utils.data.random_split(dataset, [ratio, 1 - ratio])
+    
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    print(f"Train data loaded. n_samples = {len(dataset)}\ttrain = {len(train_dataset)}\tval = {len(val_dataset)}")
+
+    print(f"Loading test data from {test_path} ...")
+    data_test = load_data(test_path)
+    test_dataset = NSPDataset(data_test, tokenizer)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
+    print(f"Test data loaded. n_samples = {len(test_dataset)}")
+
+    return train_loader, val_loader, test_loader
+
+
 def main(args):
     # Device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -51,13 +72,7 @@ def main(args):
     print(f"Tokenizer created.")
 
     # Data
-    print(f"Loading data from {args.data} ...")
-    data = load_data(args.data)
-    dataset = NSPDataset(data, tokenizer)
-    train_dataset, val_dataset = torch.utils.data.random_split(dataset, [args.split, 1 - args.split])
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True)
-    print(f"Data loaded. n_samples = {len(dataset)}\ttrain = {len(train_dataset)}\tval = {len(val_dataset)}")
+    train_loader, val_loader, test_loader = prepare_loaders(args.train, args.test, tokenizer, args.batch_size, args.split)
 
     # Model
     print(f"Creating {'CZERT' if args.czert else 'NSPModel'} model ...")
@@ -97,16 +112,16 @@ def main(args):
 
         model.train()
         for batch_idx, (inputs, labels) in enumerate(train_loader):
-            input_ids = inputs["input_ids"].squeeze().to(device)
-            token_type_ids = inputs["token_type_ids"].squeeze().to(device)
-            attention_mask = inputs["attention_mask"].squeeze().to(device)
-            labels = labels.to(device=device, dtype=torch.float32)
+            input_ids = inputs["input_ids"].squeeze(dim=1).to(device)
+            token_type_ids = inputs["token_type_ids"].squeeze(dim=1).to(device)
+            attention_mask = inputs["attention_mask"].squeeze(dim=1).to(device)
+            labels = labels.unsqueeze(1).to(device=device, dtype=torch.float32)
 
             outputs = model(
                 input_ids,
                 token_type_ids=token_type_ids,
                 attention_mask=attention_mask,
-            ).squeeze()
+            )
 
             loss = criterion(outputs, labels)
 
@@ -164,7 +179,28 @@ def main(args):
     print(f"Training finished.")
 
     # Test model
-    pass
+    predictions_test = []
+    ground_truth_test = []
+    test_loss = 0.0
+    test_steps = 0
+    
+    model.eval()
+    for batch_idx, (inputs, labels) in enumerate(test_loader):
+        input_ids = inputs["input_ids"].squeeze().to(device)
+        token_type_ids = inputs["token_type_ids"].squeeze().to(device)
+        attention_mask = inputs["attention_mask"].squeeze().to(device)
+        labels = labels.to(device=device, dtype=torch.float32)
+
+        outputs = model(
+            input_ids,
+            token_type_ids=token_type_ids,
+            attention_mask=attention_mask,
+        ).squeeze()
+
+        ground_truth_test.extend(labels.to(dtype=torch.int32).tolist())
+        predictions_test.extend(outputs.detach().round().to(dtype=torch.int32).tolist())
+
+    evaluate(ground_truth_test, predictions_test, full=False)
 
 
 if __name__ == "__main__":
