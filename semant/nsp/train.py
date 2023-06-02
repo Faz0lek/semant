@@ -13,7 +13,6 @@ import datetime
 import torch
 from torch import nn
 
-
 from dataset import NSPDataset
 from nsp_utils import build_tokenizer, load_data, n_params, evaluate
 from nsp_czert import CzertNSP
@@ -32,6 +31,7 @@ def parse_arguments():
     parser.add_argument("--epochs", type=int, default=1, help="Number of epochs.")
     parser.add_argument("--batch-size", type=int, default=1, help="Batch size.")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate.")
+    parser.add_argument("--clip", type=float, default=1.0, help="Gradient clipping value")
     parser.add_argument("--view-step", type=int, default=1000, help="How often to print train loss.")
     parser.add_argument("--split", type=float, default=0.8, help="Train - validation split.")
 
@@ -138,6 +138,7 @@ def main(args):
             # Step
             optim.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(parameters=model.parameters(), max_norm=args.clip)
             optim.step()
 
         # Validation

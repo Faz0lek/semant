@@ -15,12 +15,15 @@ class NSPDataset(torch.utils.data.Dataset):
         self.tokenizer = tokenizer
     
     def __getitem__(self, index):
-        sen1, sen2, label = self.data[index]
+        sen1, sen2, label = self.data[index].strip().split("\t")
+        
+        sen1 = sen1.strip()
+        sen2 = sen2.strip()
 
         tokenizer_output = self.tokenizer(
             sen1,
             sen2,
-            max_length=100,
+            max_length=150,
             padding="max_length",
             return_tensors="pt")
 

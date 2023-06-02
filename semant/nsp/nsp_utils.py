@@ -103,10 +103,13 @@ def remove_accents(text: str) -> str:
     return text_
 
 
-def load_data(path: str):
+def load_data(path: str, raw: bool = True):
     data = []
 
     with open(path, "r") as f:
+        if raw:
+            return f.readlines()
+        
         for line in f:
             sen1, sen2, label = line.split("\t")
 
