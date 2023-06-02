@@ -19,10 +19,11 @@ python -u $SCRIPTS_DIR/train.py \
     --test $BASE/data/books/books-dataset.tst \
     --czert \
     --epochs 1 \
-    --batch-size 8 \
+    --batch-size 6 \
     --lr 5e-5 \
-    --clip 3.0 \
+    --clip 3\
     --save-path $SAVE_DIR \
     --view-step 100 \
+    --val-step 500 \
     --split 0.8
     # --model-path $SAVE_DIR/checkpoint_005.pth

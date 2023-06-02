@@ -11,8 +11,10 @@ from nsp_utils import CZERT_PATH
 
 
 class CzertNSP(nn.Module):
-    def __init__(self, embeddings_size: int):
+    def __init__(self, embeddings_size: int, device):
         super(CzertNSP, self).__init__()
+
+        self.device = device
 
         self.czert = BertModel.from_pretrained(CZERT_PATH)
         self.czert.resize_token_embeddings(embeddings_size)
