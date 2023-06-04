@@ -8,6 +8,8 @@ import typing
 
 from sklearn import metrics
 from transformers import BertTokenizerFast
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 CZERT_PATH = r"UWB-AIR/Czert-B-base-cased"
@@ -118,7 +120,17 @@ def load_data(path: str, raw: bool = True):
     return data
 
 
-def evaluate(ground_truth: list, predictions: list, full: bool = False) -> None:
+def evaluate(
+    ground_truth: list,
+    predictions: list,
+    train_loss: list = [],
+    val_loss: list = [],
+    train_accuracy: list = [],
+    val_accuracy: list = [],
+    view_step: int = 0,
+    val_step: int = 0,
+    full: bool = False
+    ) -> None:
     """Compare predictions with ground truth and print metrics.
 
         Parameters
@@ -127,25 +139,76 @@ def evaluate(ground_truth: list, predictions: list, full: bool = False) -> None:
             Ground truth values
         predictions : list
             Model predictions
+        train_loss : list
+            List of training loss over time
+        val_loss : list
+            List of validation loss over time
+        accuracy : list
+            List of accuracy over time
+        view_step : int
+            How often train loss was measured
+        val_step : int
+            How often validation was performed
+        full : bool
+            If True, output is also an evaluation.pdf file with plots
     """
 
     print(metrics.classification_report(ground_truth, predictions, target_names=["IsNextStc", "IsNotNextStc"], digits=4))
-    print(f"         AUC     {metrics.roc_auc_score(ground_truth, predictions):.4f}\n")
+    auc = metrics.roc_auc_score(ground_truth, predictions)
+    print(f"         AUC     {auc:.4f}\n")
 
-    fpr, tpr, threshold = metrics.roc_curve(ground_truth, predictions)
+    if not full:
+        return
+
+    fig, axs = plt.subplots(1, 4, figsize=(13, 3))
     
-    if full:
-        plt.clf()
-        plt.title(f"ROC")
-        plt.plot(fpr, tpr, "b")
-        plt.plot([0, 1], [0, 1],"r--")
-        plt.xlim([0, 1])
-        plt.ylim([0, 1])
-        plt.ylabel("True Positive Rate")
-        plt.xlabel("False Positive Rate")
-        plt.savefig("ROC.pdf")
+    # ROC
+    fpr, tpr, threshold = metrics.roc_curve(ground_truth, predictions)
+    axs[0].plot(fpr, tpr, "b")
+    axs[0].plot([0, 1], [0, 1], "r--")
+    axs[0].set_xlim([0, 1])
+    axs[0].set_ylim([0, 1])
+    axs[0].set_ylabel("TPR")
+    axs[0].set_xlabel("FPR")
+    axs[0].set_title(f"ROC (AUC = {auc:.2f})")
 
-    # TODO: Add confusion matrix
+    # CM
+    cm_display = metrics.ConfusionMatrixDisplay.from_predictions(
+        ground_truth,
+        predictions,
+        colorbar=False,
+        ax=axs[1],
+        display_labels=["IsNextStc", "IsNotNextStc"],
+        )
+
+    # Loss
+    x_trn = [val for val in range(view_step, (len(train_loss) + 1) * view_step, view_step)]
+    x_val = [val for val in range(val_step, (len(val_loss) + 1) * val_step, val_step)]
+    axs[2].plot(x_trn, train_loss, "r", label="train")
+    axs[2].plot(x_val, val_loss, "g", label="validation")
+    axs[2].legend(fontsize="x-small")
+    axs[2].set_title("Loss")
+    axs[2].set_xlabel("Steps")
+    axs[2].set_ylabel("Value")
+    axs[2].grid()
+
+    # Accuracy
+    axs[3].plot(x_trn, train_accuracy, "r", label="train")
+    axs[3].plot(x_val, val_accuracy, "g", label="validation")
+    axs[3].legend(fontsize="x-small")
+    axs[3].set_title("Accuracy")
+    axs[3].set_xlabel("Steps")
+    axs[3].set_ylabel("Value")
+    axs[3].set_ylim(0, 1)
+    axs[3].grid()
+
+    plt.tight_layout()
+    plt.savefig("evaluation.pdf")
+
+
+def accuracy(ground_truth: list, predictions: list) -> float:
+    assert len(predictions) == len(ground_truth)
+    return np.sum(np.array(ground_truth) == np.array(predictions)) / len(predictions)
 
 
 def n_params(model, trainable_only: bool = True) -> int:
@@ -160,3 +223,14 @@ def build_tokenizer():
     tokenizer.add_special_tokens({"additional_special_tokens": [JOKER]})
 
     return tokenizer
+
+
+if __name__ == "__main__":
+    gt = [1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1]
+    predictions = [1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1]
+    train_loss = [0.9, 0.8, 0.5, 0.2]
+    val_loss = [1.5, 1.2]
+    acc = [0.1, 0.3, 0.4, 0.8]
+    view_step = 1000
+    val_step = 2000
+    evaluate(gt, predictions, train_loss, val_loss, acc, view_step, val_step, True)

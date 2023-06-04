@@ -105,8 +105,10 @@ def main(args):
     try:
         trainer.train(train_loader, val_loader)
     except KeyboardInterrupt:
-        print("Training stopped by user. Validating:")
-        trainer.validate(val_loader)
+        print("Training stopped by user. Testing:")
+    finally:
+        # Testing
+        trainer.validate(test_loader, True)
     print("Training finished.")
 
 
