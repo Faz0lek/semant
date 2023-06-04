@@ -19,7 +19,7 @@ python -u $SCRIPTS_DIR/train.py \
     --test $BASE/data/books/books-dataset.tst \
     --czert \
     --epochs 1 \
-    --batch-size 6 \
+    --batch-size 4 \
     --lr 5e-5 \
     --clip 3\
     --save-path $SAVE_DIR \

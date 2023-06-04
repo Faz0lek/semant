@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
-from nsp_utils import evaluate
+from nsp_utils import evaluate, accuracy
 
 
 @dataclass
@@ -23,9 +23,18 @@ class TrainerSettings:
     epochs: int
 
 
+@dataclass
+class TrainerMonitor:
+    train_loss: list
+    val_loss: list
+    train_acc: list
+    val_acc: list
+
+
 class Trainer:
     def __init__(self, model, tokenizer, settings: dict):
         self.settings = settings
+        self.monitor = TrainerMonitor([], [], [], [])
 
         self.model = model
         self.tokenizer = tokenizer
@@ -33,19 +42,16 @@ class Trainer:
         self.optim = torch.optim.Adam(self.model.parameters(), self.settings.lr)
         self.criterion = nn.BCELoss()
 
-
-    def train(self):
-        pass
-
     def train_step(self, batch, labels):
-        loss, _ = self.forward(batch, labels)
+        loss, outputs = self.forward(batch, labels)
     
         self.optim.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(parameters=self.model.parameters(), max_norm=self.settings.clip)
         self.optim.step()
 
-        return loss.item()
+        predictions = outputs.detach().round().to(dtype=torch.int32)
+        return loss.item(), predictions
 
     def test_step(self, batch, labels):
         with torch.no_grad():
@@ -73,36 +79,41 @@ class Trainer:
         return loss, outputs
 
     def train(self, train_loader, val_loader):
+        train_gts = []
+        train_preds = []
+        steps_loss = 0.0
+        train_steps = 0
+
         self.model.train()
         for epoch in range(self.settings.epochs):
-            # Accumulators
-            epoch_loss = 0.0
-            steps_loss = 0.0
-            train_steps = 0
-
             self.model.train()
             for batch_idx, (inputs, labels) in enumerate(train_loader):
-                loss = self.train_step(inputs, labels)
+                loss, predictions = self.train_step(inputs, labels)
 
-                epoch_loss += loss
                 steps_loss += loss
                 train_steps += 1
+                train_gts.extend(labels.to(dtype=torch.int32).tolist())
+                train_preds.extend(predictions.tolist())
 
                 if not train_steps % self.settings.view_step:
-                    print(f"Epoch {epoch+1} | Steps {train_steps} | Loss: {(steps_loss / self.settings.view_step):.4f}")
-                    steps_loss = 0.0 
+                    display_loss = steps_loss / self.settings.view_step
+                    print(f"Epoch {epoch+1} | Steps {train_steps} | Loss: {(display_loss):.4f}")
+
+                    self.monitor.train_loss.append(display_loss)
+                    self.monitor.train_acc.append(accuracy(train_gts, train_preds))
+
+                    steps_loss = 0.0
+                    train_gts = []
+                    train_preds = []
 
                 # Since we have a huge dataset, validate more often than once per epoch
                 if not train_steps % self.settings.val_step:
                     self.validate(val_loader)
                     self.model.train()
-
-            # Validation at the end of an epoch
-            self.validate(val_loader)
     
-    def validate(self, loader):
-        val_steps = 0
-        val_loss = 0.0
+    def validate(self, loader, testing: bool=False):
+        steps = 0
+        total_loss = 0.0
 
         ground_truth = []
         all_predictions = []
@@ -111,11 +122,25 @@ class Trainer:
         for batch_idx, (inputs, labels) in enumerate(loader):
             loss, predictions = self.test_step(inputs, labels)
 
-            val_loss += loss
-            val_steps += 1
+            total_loss += loss
+            steps += 1
 
             ground_truth.extend(labels.to(dtype=torch.int32).tolist())
             all_predictions.extend(predictions.tolist())
 
-        print(f"Validation loss: {(val_loss / val_steps):.4f}")
-        evaluate(ground_truth, all_predictions, full=False)
+        if not testing:
+            display_loss = total_loss / steps
+            print(f"Validation loss: {(total_loss / steps):.4f}")
+
+            self.monitor.val_loss.append(display_loss)
+            self.monitor.val_acc.append(accuracy(ground_truth, all_predictions))
+
+        evaluate(ground_truth,
+                 all_predictions,
+                 self.monitor.train_loss,
+                 self.monitor.val_loss,
+                 self.monitor.train_acc,
+                 self.monitor.val_acc,
+                 self.settings.view_step,
+                 self.settings.val_step,
+                 full=testing)
