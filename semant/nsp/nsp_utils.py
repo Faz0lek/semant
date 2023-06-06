@@ -218,6 +218,20 @@ def n_params(model, trainable_only: bool = True) -> int:
         return sum(p.numel() for p in model.parameters())
 
 
+def model_size(model) -> float:
+    param_size = 0
+
+    for param in model.parameters():
+        param_size += param.nelement() * param.element_size()
+
+    buffer_size = 0
+    for buffer in model.buffers():
+        buffer_size += buffer.nelement() * buffer.element_size()
+
+
+    size_all = param_size + buffer_size
+    return size_all
+
 def build_tokenizer():
     tokenizer = BertTokenizerFast.from_pretrained(CZERT_PATH)
     tokenizer.add_special_tokens({"additional_special_tokens": [JOKER]})
