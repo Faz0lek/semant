@@ -105,11 +105,12 @@ def main(args):
     try:
         trainer.train(train_loader, val_loader)
     except KeyboardInterrupt:
-        print("Training stopped by user. Testing:")
+        print("Training stopped by user.")
     finally:
         # Testing
+        print("Training finished.")
+        print("Testing ...")
         trainer.validate(test_loader, True)
-    print("Training finished.")
 
 
 if __name__ == "__main__":

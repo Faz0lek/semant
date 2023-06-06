@@ -93,7 +93,7 @@ class Trainer:
                 steps_loss += loss
                 train_steps += 1
                 train_gts.extend(labels.to(dtype=torch.int32).tolist())
-                train_preds.extend(predictions.tolist())
+                train_preds.extend(predictions.squeeze(dim=1).tolist())
 
                 if not train_steps % self.settings.view_step:
                     display_loss = steps_loss / self.settings.view_step
@@ -110,6 +110,8 @@ class Trainer:
                 if not train_steps % self.settings.val_step:
                     self.validate(val_loader)
                     self.model.train()
+
+            print(f"Epoch {epoch+1} finished.")
     
     def validate(self, loader, testing: bool=False):
         steps = 0
@@ -126,7 +128,7 @@ class Trainer:
             steps += 1
 
             ground_truth.extend(labels.to(dtype=torch.int32).tolist())
-            all_predictions.extend(predictions.tolist())
+            all_predictions.extend(predictions.squeeze(dim=1).tolist())
 
         if not testing:
             display_loss = total_loss / steps

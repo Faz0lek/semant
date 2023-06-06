@@ -19,12 +19,6 @@ class CzertNSP(nn.Module):
         self.czert = BertModel.from_pretrained(CZERT_PATH)
         self.czert.resize_token_embeddings(embeddings_size)
 
-        # self.classifier = nn.Sequential(
-        #    nn.Linear(768, 64),
-        #    nn.ReLU(),
-        #    nn.Linear(64, 1),
-        #    nn.Sigmoid(),
-        #)
         self.classifier = nn.Sequential(
                 nn.Linear(768, 1),
                 nn.Sigmoid(),
