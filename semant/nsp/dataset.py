@@ -23,7 +23,7 @@ class NSPDataset(torch.utils.data.Dataset):
         tokenizer_output = self.tokenizer(
             sen1,
             sen2,
-            max_length=150,
+            max_length=80,
             padding="max_length",
             return_tensors="pt")
 
@@ -31,3 +31,17 @@ class NSPDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.data)
+
+
+if __name__ == "__main__":
+    from nsp_utils import build_tokenizer, load_data
+    PATH = r"/home/martin/semant/data/books/books-dataset.tst"
+    tokenizer = build_tokenizer()
+    data_train = load_data(PATH)
+    dataset = NSPDataset(data_train, tokenizer)
+
+    outputs, label = dataset[1]
+    ids = outputs["input_ids"].tolist()[0]
+
+    decoded_tokens = tokenizer.convert_ids_to_tokens(ids)
+    print(decoded_tokens, label)

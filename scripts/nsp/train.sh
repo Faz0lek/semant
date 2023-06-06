@@ -17,7 +17,7 @@ mkdir -p $SAVE_DIR
 python -u $SCRIPTS_DIR/train.py \
     --train $BASE/data/books/books-dataset.tst \
     --test $BASE/data/books/books-dataset.tst \
-    --czert \
+    --features 64 \
     --epochs 1 \
     --batch-size 4 \
     --lr 5e-5 \
