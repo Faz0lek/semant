@@ -232,6 +232,7 @@ def model_size(model) -> float:
     size_all = param_size + buffer_size
     return size_all
 
+
 def build_tokenizer():
     tokenizer = BertTokenizerFast.from_pretrained(CZERT_PATH)
     tokenizer.add_special_tokens({"additional_special_tokens": [JOKER]})

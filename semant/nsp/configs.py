@@ -27,6 +27,7 @@ from nsp_utils import n_params, model_size
     vocab_size : Vocabulary size of the BERT model. Defines the number of different tokens that can be represented by the inputs_ids passed when calling BertModel
 """
 
+
 bert_config_64 = {
     "attention_probs_dropout_prob": 0.1,
     "classifier_dropout": None,
@@ -91,8 +92,16 @@ bert_config_512 = {
 }
 
 
+config_mapping = {
+    "bert_config_64" : bert_config_64,
+    "bert_config_128" : bert_config_128,
+    "bert_config_256" : bert_config_256,
+    "bert_config_512" : bert_config_512,
+}
+
+
 if __name__ == "__main__":
-    config = bert_config_512
+    config = bert_config_64
     config = BertConfig.from_dict(config)
     # print(config)
 

@@ -15,8 +15,7 @@ from torch import nn
 
 from dataset import NSPDataset
 from nsp_utils import build_tokenizer, load_data, n_params, evaluate
-from nsp_czert import CzertNSP
-from nsp_model import NSPModel
+from nsp_model import build_model
 from trainer import Trainer, TrainerSettings
 
 
@@ -28,6 +27,7 @@ def parse_arguments():
     parser.add_argument("--train", required=True, help="Path to train dataset.")
     parser.add_argument("--test", required=True, help="Path to test dataset.")
     parser.add_argument("--czert", action="store_true", help="Train baseline CZERT instead of our model.")
+    parser.add_argument("--features", type=int, default=0, choices=[0, 64, 128, 256, 512], help="Number of features of BERT model.")
 
     parser.add_argument("--epochs", type=int, default=1, help="Number of epochs.")
     parser.add_argument("--batch-size", type=int, default=1, help="Batch size.")
@@ -77,8 +77,13 @@ def main(args):
     train_loader, val_loader, test_loader = prepare_loaders(args.train, args.test, tokenizer, args.batch_size, args.split)
 
     # Model
-    print(f"Creating {'CZERT' if args.czert else 'NSPModel'} model ...")
-    model = CzertNSP(len(tokenizer), device) if args.czert else NSPModel()
+    print(f"Creating model ...")
+    model = build_model(
+        args.czert,
+        len(tokenizer),
+        device,
+        args.features
+    )
 
     if args.model_path:
         print(f"Loading model from: {args.model_path} ...")
@@ -86,7 +91,7 @@ def main(args):
         model.load_state_dict(checkpoint["model_state_dict"])
 
     model = model.to(device)
-    print(f"Model created. (n_params = {(n_params(model) / 1e6):.2f} M)")
+    print(f"{model.name} created. (n_params = {(n_params(model) / 1e6):.2f} M)")
 
     # Trainer settings
     print("Creating Trainer instance ...")
