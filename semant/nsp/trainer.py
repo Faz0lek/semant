@@ -39,7 +39,7 @@ class Trainer:
         self.model = model
         self.tokenizer = tokenizer
 
-        self.optim = torch.optim.Adam(self.model.parameters(), self.settings.lr)
+        self.optim = torch.optim.Adam(self.model.parameters(), self.settings.lr, betas=(0.9, 0.98), eps=1e-9)
         self.criterion = nn.BCELoss()
 
     def train_step(self, batch, labels):
