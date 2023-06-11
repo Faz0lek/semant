@@ -28,80 +28,80 @@ from nsp_utils import n_params, model_size
 """
 
 
-bert_config_64 = {
+bert_config_72 = {
     "attention_probs_dropout_prob": 0.1,
     "classifier_dropout": None,
     "hidden_act": "gelu",
     "hidden_dropout_prob": 0.1,
-    "hidden_size": 64,
+    "hidden_size": 72,
     "initializer_range": 0.02,
-    "intermediate_size": 3072,
+    "intermediate_size": 288,
     "max_position_embeddings": 512,
-    "num_attention_heads": 8,
-    "num_hidden_layers": 8,
+    "num_attention_heads": 12,
+    "num_hidden_layers": 12,
     "position_embedding_type": "absolute",
     "vocab_size": 30522,
 }
 
 
-bert_config_128 = {
+bert_config_132 = {
     "attention_probs_dropout_prob": 0.1,
     "classifier_dropout": None,
     "hidden_act": "gelu",
     "hidden_dropout_prob": 0.1,
-    "hidden_size": 128,
+    "hidden_size": 132,
     "initializer_range": 0.02,
-    "intermediate_size": 3072,
+    "intermediate_size": 528,
     "max_position_embeddings": 512,
-    "num_attention_heads": 8,
-    "num_hidden_layers": 8,
+    "num_attention_heads": 12,
+    "num_hidden_layers": 12,
     "position_embedding_type": "absolute",
     "vocab_size": 30522,
 }
 
 
-bert_config_256 = {
+bert_config_264 = {
     "attention_probs_dropout_prob": 0.1,
     "classifier_dropout": None,
     "hidden_act": "gelu",
     "hidden_dropout_prob": 0.1,
-    "hidden_size": 256,
+    "hidden_size": 264,
     "initializer_range": 0.02,
-    "intermediate_size": 3072,
+    "intermediate_size": 1056,
     "max_position_embeddings": 512,
-    "num_attention_heads": 8,
-    "num_hidden_layers": 8,
+    "num_attention_heads": 12,
+    "num_hidden_layers": 12,
     "position_embedding_type": "absolute",
     "vocab_size": 30522,
 }
 
 
-bert_config_512 = {
+bert_config_516 = {
     "attention_probs_dropout_prob": 0.1,
     "classifier_dropout": None,
     "hidden_act": "gelu",
     "hidden_dropout_prob": 0.1,
-    "hidden_size": 512,
+    "hidden_size": 516,
     "initializer_range": 0.02,
-    "intermediate_size": 3072,
+    "intermediate_size": 2064,
     "max_position_embeddings": 512,
-    "num_attention_heads": 8,
-    "num_hidden_layers": 8,
+    "num_attention_heads": 12,
+    "num_hidden_layers": 12,
     "position_embedding_type": "absolute",
     "vocab_size": 30522,
 }
 
 
 config_mapping = {
-    "bert_config_64" : bert_config_64,
-    "bert_config_128" : bert_config_128,
-    "bert_config_256" : bert_config_256,
-    "bert_config_512" : bert_config_512,
+    "bert_config_72" : bert_config_72,
+    "bert_config_132" : bert_config_132,
+    "bert_config_264" : bert_config_264,
+    "bert_config_516" : bert_config_516,
 }
 
 
 if __name__ == "__main__":
-    config = bert_config_64
+    config = bert_config_72
     config = BertConfig.from_dict(config)
     # print(config)
 

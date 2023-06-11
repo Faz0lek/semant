@@ -27,7 +27,7 @@ def parse_arguments():
     parser.add_argument("--train", required=True, help="Path to train dataset.")
     parser.add_argument("--test", required=True, help="Path to test dataset.")
     parser.add_argument("--czert", action="store_true", help="Train baseline CZERT instead of our model.")
-    parser.add_argument("--features", type=int, default=0, choices=[0, 64, 128, 256, 512], help="Number of features of BERT model.")
+    parser.add_argument("--features", type=int, default=0, choices=[0, 72, 132, 264, 516], help="Number of features of BERT model.")
 
     parser.add_argument("--epochs", type=int, default=1, help="Number of epochs.")
     parser.add_argument("--batch-size", type=int, default=1, help="Batch size.")

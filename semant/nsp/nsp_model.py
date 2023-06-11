@@ -35,6 +35,14 @@ class NSPModel(nn.Module):
             attention_mask=attention_mask,
         )
 
+        # last_hidden_state
+        # pooler_output
+        # hidden_states
+        # past_key_values
+        # attentions
+        # cross_attentions
+        # print(outputs.pooler_output.shape)
+
         pooled_outputs = outputs[1]
         # pooled_outputs = self.dropout(pooled_outputs)
 
