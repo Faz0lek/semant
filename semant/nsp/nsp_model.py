@@ -12,12 +12,13 @@ from configs import config_mapping
 
 
 class NSPModel(nn.Module):
-    def __init__(self, bert, device, name):
+    def __init__(self, bert, device, name, sep_pos: int = 0):
         super(NSPModel, self).__init__()
 
         self.name = name
         self.device = device
         self.bert = bert
+        self.sep_pos = sep_pos
 
         self.n_features = self.bert.config.hidden_size
 
@@ -41,12 +42,15 @@ class NSPModel(nn.Module):
         # past_key_values
         # attentions
         # cross_attentions
-        # print(outputs.pooler_output.shape)
 
-        pooled_outputs = outputs[1]
-        # pooled_outputs = self.dropout(pooled_outputs)
+        if self.sep_pos:
+            features = outputs.last_hidden_state[:, self.sep_pos, :]
+        else:
+            features = outputs[1] # pooled CLS token
 
-        p = self.classifier(pooled_outputs)
+        # features = self.dropout(features)
+
+        p = self.classifier(features)
 
         return p
 
@@ -56,6 +60,7 @@ def build_model(
     vocab_size: int,
     device,
     out_features: int = None,
+    sep_pos: int = 0,
     ):
     assert (czert ^ bool(out_features))
 
@@ -68,6 +73,6 @@ def build_model(
         name = f"Custom model with {out_features} features"
 
     bert.resize_token_embeddings(vocab_size)
-    model = NSPModel(bert, device, name)
+    model = NSPModel(bert, device, name, sep_pos)
 
     return model

@@ -17,7 +17,7 @@ mkdir -p $SAVE_DIR
 python -u $SCRIPTS_DIR/train.py \
     --train $BASE/data/books/books-dataset.tst \
     --test $BASE/data/books/books-dataset.tst \
-    --features 256 \
+    --features 264 \
     --epochs 1000 \
     --batch-size 6 \
     --lr 5e-5 \
@@ -25,5 +25,7 @@ python -u $SCRIPTS_DIR/train.py \
     --save-path $SAVE_DIR \
     --view-step 100 \
     --val-step 500 \
-    --split 0.5
+    --split 0.5 \
+    --warmup-steps 0 \
+    --sep-pos 16
     # --model-path $SAVE_DIR/checkpoint_005.pth
