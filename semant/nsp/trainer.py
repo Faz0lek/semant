@@ -21,6 +21,7 @@ class TrainerSettings:
     view_step: int
     val_step: int
     epochs: int
+    warmup_steps: int
 
 
 @dataclass
@@ -78,6 +79,13 @@ class Trainer:
 
         return loss, outputs
 
+    def lr_update(self, train_steps: int):
+        d = self.model.n_features
+
+        for group in self.optim.param_groups:
+            group['lr'] = (d ** (-0.5)) * min(((train_steps+1) ** (-0.5)), (train_steps+1) * (self.warmup_steps ** (-1.5)))
+
+
     def train(self, train_loader, val_loader):
         train_gts = []
         train_preds = []
@@ -88,10 +96,13 @@ class Trainer:
         for epoch in range(self.settings.epochs):
             self.model.train()
             for batch_idx, (inputs, labels) in enumerate(train_loader):
+                if self.settings.warmup_steps:
+                    lr_update(train_steps)
+
                 loss, predictions = self.train_step(inputs, labels)
 
                 steps_loss += loss
-                train_steps += 1
+                train_steps += 1    
                 train_gts.extend(labels.to(dtype=torch.int32).tolist())
                 train_preds.extend(predictions.squeeze(dim=1).tolist())
 
@@ -112,7 +123,7 @@ class Trainer:
                     self.model.train()
 
             print(f"Epoch {epoch+1} finished.")
-    
+
     def validate(self, loader, testing: bool=False):
         steps = 0
         total_loss = 0.0

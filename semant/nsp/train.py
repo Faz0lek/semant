@@ -36,6 +36,8 @@ def parse_arguments():
     parser.add_argument("--view-step", type=int, default=1000, help="How often to print train loss.")
     parser.add_argument("--val-step", type=int, default=5000, help="How often to validate model.")
     parser.add_argument("--split", type=float, default=0.8, help="Train - validation split.")
+    parser.add_argument("--warmup-steps", type=int, default=0, help="How many warmup steps (linear warmup).")
+    parser.add_argument("--sep-pos", type=int, default=0, help="SEP token will be at a fixed position between two sentences and classification will be done based on this token.")
 
     parser.add_argument("--save-path", default=".", type=str, help="Model checkpoints will be saved here.")
     parser.add_argument("--model-path", default=None, type=str, help="Load model from saved checkpoint.")
@@ -44,10 +46,10 @@ def parse_arguments():
     return args
 
 
-def prepare_loaders(train_path: str, test_path: str, tokenizer, batch_size: int, ratio: float) -> tuple:
+def prepare_loaders(train_path: str, test_path: str, tokenizer, batch_size: int, ratio: float, sep_pos: int) -> tuple:
     print(f"Loading train data from {train_path} ...")
     data_train = load_data(train_path)
-    dataset = NSPDataset(data_train, tokenizer)
+    dataset = NSPDataset(data_train, tokenizer, sep_pos=sep_pos)
 
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [ratio, 1 - ratio])
     
@@ -57,7 +59,7 @@ def prepare_loaders(train_path: str, test_path: str, tokenizer, batch_size: int,
 
     print(f"Loading test data from {test_path} ...")
     data_test = load_data(test_path)
-    test_dataset = NSPDataset(data_test, tokenizer)
+    test_dataset = NSPDataset(data_test, tokenizer, sep_pos=sep_pos)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
     print(f"Test data loaded. n_samples = {len(test_dataset)}")
 
@@ -74,7 +76,7 @@ def main(args):
     print(f"Tokenizer created.")
 
     # Data
-    train_loader, val_loader, test_loader = prepare_loaders(args.train, args.test, tokenizer, args.batch_size, args.split)
+    train_loader, val_loader, test_loader = prepare_loaders(args.train, args.test, tokenizer, args.batch_size, args.split, args.sep_pos)
 
     # Model
     print(f"Creating model ...")
@@ -82,7 +84,8 @@ def main(args):
         args.czert,
         len(tokenizer),
         device,
-        args.features
+        args.features,
+        args.sep_pos,
     )
 
     if args.model_path:
@@ -101,6 +104,7 @@ def main(args):
         view_step=args.view_step,
         val_step=args.val_step,
         epochs=args.epochs,
+        warmup_steps=args.warmup_steps,
     )
 
     trainer = Trainer(model, tokenizer, trainer_settings)
