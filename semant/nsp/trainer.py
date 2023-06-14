@@ -7,6 +7,7 @@ Author -- Martin Kostelnik
 import argparse
 import typing
 from dataclasses import dataclass
+import os
 
 import torch
 from torch import nn
@@ -22,6 +23,7 @@ class TrainerSettings:
     val_step: int
     epochs: int
     warmup_steps: int
+    save_path: str
 
 
 @dataclass
@@ -83,7 +85,7 @@ class Trainer:
         d = self.model.n_features
 
         for group in self.optim.param_groups:
-            group['lr'] = (d ** (-0.5)) * min(((train_steps+1) ** (-0.5)), (train_steps+1) * (self.warmup_steps ** (-1.5)))
+            group['lr'] = (d ** (-0.5)) * min(((train_steps+1) ** (-0.5)), (train_steps+1) * (self.settings.warmup_steps ** (-1.5)))
 
 
     def train(self, train_loader, val_loader):
@@ -97,7 +99,7 @@ class Trainer:
             self.model.train()
             for batch_idx, (inputs, labels) in enumerate(train_loader):
                 if self.settings.warmup_steps:
-                    lr_update(train_steps)
+                    self.lr_update(train_steps)
 
                 loss, predictions = self.train_step(inputs, labels)
 
@@ -120,6 +122,11 @@ class Trainer:
                 # Since we have a huge dataset, validate more often than once per epoch
                 if not train_steps % self.settings.val_step:
                     self.validate(val_loader)
+
+                    # Save model checkpoint
+                    path = os.path.join(self.settings.save_path, f"checkpoint{train_steps}.pth")
+                    torch.save(self.model.state_dict(), path)
+
                     self.model.train()
 
             print(f"Epoch {epoch+1} finished.")
