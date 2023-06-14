@@ -90,8 +90,7 @@ def main(args):
 
     if args.model_path:
         print(f"Loading model from: {args.model_path} ...")
-        checkpoint = torch.load(args.model_path)
-        model.load_state_dict(checkpoint["model_state_dict"])
+        model.load_state_dict(torch.load(args.model_path))
 
     model = model.to(device)
     print(f"{model.name} created. (n_params = {(n_params(model) / 1e6):.2f} M)")
@@ -105,6 +104,7 @@ def main(args):
         val_step=args.val_step,
         epochs=args.epochs,
         warmup_steps=args.warmup_steps,
+        save_path=args.save_path,
     )
 
     trainer = Trainer(model, tokenizer, trainer_settings)

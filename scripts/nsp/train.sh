@@ -27,5 +27,5 @@ python -u $SCRIPTS_DIR/train.py \
     --val-step 500 \
     --split 0.5 \
     --warmup-steps 0 \
-    --sep-pos 16
-    # --model-path $SAVE_DIR/checkpoint_005.pth
+    --sep-pos 16 \
+    --model-path $SAVE_DIR/checkpoint1000.pth
