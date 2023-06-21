@@ -248,3 +248,4 @@ if __name__ == "__main__":
     view_step = 1000
     val_step = 2000
     evaluate(gt, predictions, train_loss, val_loss, acc, view_step, val_step, True)
+    

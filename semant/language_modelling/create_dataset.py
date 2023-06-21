@@ -1,4 +1,4 @@
-"""Create dataset from txt file with preprocess data (from preprocess_data.py).
+"""Create dataset from txt file with preprocessed data (from preprocess_data.py).
 
     Input
     -----

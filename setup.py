@@ -4,6 +4,6 @@ setup(
     name='semant',
     packages=[
         'semant',
-        'semant/nsp',
+        'semant/language_modelling',
     ],
 )

@@ -16,7 +16,7 @@ import sys
 import argparse
 import json
 
-from nsp_utils import remove_accents
+from utils import remove_accents
 
 
 def parse_arguments():

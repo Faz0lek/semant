@@ -5,7 +5,7 @@
 """
 
 from transformers import BertConfig, BertModel
-from nsp_utils import n_params, model_size
+from utils import n_params, model_size
 
 """Description
 

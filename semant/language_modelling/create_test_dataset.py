@@ -6,7 +6,9 @@
 
     Output
     ------
-        File in txt format where each line has a format <line1>\t<line2>\t<label>\n
+        File in txt format containing TEST dataset where each line has a format <line1>\t<line2>\t<label>\n
+        File in txt format containing TRAIN dataset where each line has a format <line1>\t<line2>\t<label>\n
+        THESE FILES ARE DISJOINT
 
     Date -- 30.05.2023
     Author -- Martin Kostelnik
