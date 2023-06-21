@@ -5,3 +5,5 @@ mount.sh
 unmount.sh
 models/
 data/
+tmp.py
+evaluation.pdf

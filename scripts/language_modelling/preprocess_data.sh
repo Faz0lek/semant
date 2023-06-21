@@ -9,7 +9,7 @@ BASE=/home/martin/semant
 source $BASE/venv/bin/activate
 export PATH="$BASE/venv/bin:$PATH"
 
-SCRIPTS_DIR=$BASE/semant/nsp
+SCRIPTS_DIR=$BASE/semant/language_modelling
 DATA_PATH=$BASE/data/periodicals.jsonl
 SAVE_PATH=$BASE/data/periodicals.txt
 
