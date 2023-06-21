@@ -89,8 +89,6 @@ class Trainer:
         )
 
         if self.nsp_criterion:
-            print(model_outputs.nsp_output.shape, model_outputs.nsp_output.dtype)
-            print(nsp_labels.shape, nsp_labels.dtype)
             nsp_loss = self.nsp_criterion(model_outputs.nsp_output, nsp_labels)
 
         if self.settings.mlm:
@@ -101,7 +99,7 @@ class Trainer:
             # Reshape the outputs and labels
             reshaped_outputs = model_outputs.mlm_output.view(batch_size * seq_len, vocab_size)
             reshaped_labels = mlm_labels.flatten()
-            
+
             mlm_loss = self.mlm_criterion(reshaped_outputs, reshaped_labels)
 
         loss = nsp_loss + mlm_loss

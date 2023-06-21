@@ -53,6 +53,7 @@ def parse_arguments():
     # Save/load paths
     parser.add_argument("--save-path", default=".", type=str, help="Model checkpoints will be saved here.")
     parser.add_argument("--model-path", default=None, type=str, help="Load model from saved checkpoint.")
+    parser.add_argument("--tokenizer-path", default=None, type=str, help="Path to pretrained tokenizer.")
 
     args = parser.parse_args()
     return args
