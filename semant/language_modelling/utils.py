@@ -152,7 +152,7 @@ def evaluate(
         full : bool
             If True, output is also an evaluation.pdf file with plots
     """
-    print(metrics.classification_report(ground_truth, predictions, target_names=["IsNextStc", "IsNotNextStc"], digits=4))
+    print(metrics.classification_report(ground_truth, predictions, target_names=["IsNextStc", "IsNotNextStc"], digits=4, zero_division=0))
     auc = metrics.roc_auc_score(ground_truth, predictions)
     print(f"         AUC     {auc:.4f}\n")
 

@@ -48,7 +48,7 @@ class CLSHead(nn.Module):
 
             self.layers.append(nn.Linear(self.hidden_size, self.output_size))
 
-        self.layers.append(nn.Sigmoid() if output_size == 1 else nn.Softmax())
+        self.layers.append(nn.Sigmoid() if output_size == 1 else nn.Softmax(dim=1))
 
     def forward(self, features):
         for layer in self.layers:

@@ -8,7 +8,7 @@ import argparse
 import sys
 import typing
 import os
-import datetime
+from time import perf_counter
 
 import torch
 from torch import nn
@@ -68,6 +68,7 @@ def prepare_loaders(
     seq_len: int,
     fixed: bool,
 ) -> tuple:
+    start = perf_counter()
     print(f"Loading train data from {train_path} ...")
     data_train = load_data(train_path)
     dataset = LMDataset(data_train, tokenizer, seq_len=seq_len, fixed=fixed)
@@ -76,13 +77,18 @@ def prepare_loaders(
     
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
-    print(f"Train data loaded. n_samples = {len(dataset)}\ttrain = {len(train_dataset)}\tval = {len(val_dataset)}")
+    end = perf_counter()
+    t = end - start
+    print(f"Train data loaded. n_samples = {len(dataset)}\ttrain = {len(train_dataset)}\tval = {len(val_dataset)}\ttook {(t / 60):.1f} m")
 
+    start = perf_counter()
     print(f"Loading test data from {test_path} ...")
     data_test = load_data(test_path)
     test_dataset = LMDataset(data_test, tokenizer, seq_len=seq_len, fixed=fixed)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
-    print(f"Test data loaded. n_samples = {len(test_dataset)}")
+    end = perf_counter()
+    t = end - start
+    print(f"Test data loaded. n_samples = {len(test_dataset)}\t took {(t / 60):.1f} m")
 
     return train_loader, val_loader, test_loader
 
@@ -93,7 +99,7 @@ def main(args):
     print(f"Training on: {device}")
 
     # Tokenizer
-    tokenizer = build_tokenizer()
+    tokenizer = build_tokenizer(args.tokenizer_path)
     print(f"Tokenizer created.")
 
     # Data
@@ -144,6 +150,7 @@ def main(args):
     trainer = Trainer(model, tokenizer, trainer_settings)
     print("Trainer created.")
 
+    start = perf_counter()
     print("Starting training ...")
     try:
         trainer.train(train_loader, val_loader)
@@ -151,7 +158,9 @@ def main(args):
         print("Training stopped by user.")
     finally:
         # Testing
-        print("Training finished.")
+        end = perf_counter()
+        t = end - start
+        print(f"Training finished. Took {(t / 60):.1f} m")
         print("Testing ...")
         trainer.validate(test_loader, True)
 

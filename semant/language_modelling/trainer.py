@@ -1,4 +1,4 @@
-"""Trainer class for NSP models
+"""Trainer class for Language models
 
 Date -- 02.06.2023
 Author -- Martin Kostelnik
@@ -30,7 +30,11 @@ class TrainerSettings:
 
 @dataclass
 class TrainerMonitor:
+    nsp_train_loss: list
+    mlm_train_loss: list
     train_loss: list
+    nsp_val_loss: list
+    mlm_val_loss: list
     val_loss: list
     train_acc: list
     val_acc: list
@@ -39,7 +43,7 @@ class TrainerMonitor:
 class Trainer:
     def __init__(self, model, tokenizer, settings: dict):
         self.settings = settings
-        self.monitor = TrainerMonitor([], [], [], [])
+        self.monitor = TrainerMonitor([], [], [], [], [], [], [], [])
 
         self.model = model
         self.tokenizer = tokenizer
@@ -51,22 +55,23 @@ class Trainer:
         assert self.nsp_criterion or self.mlm_criterion
 
     def train_step(self, batch, nsp_labels, mlm_labels):
-        loss, outputs = self.forward(batch, nsp_labels, mlm_labels)
-    
+        nsp_loss, mlm_loss, outputs = self.forward(batch, nsp_labels, mlm_labels)
+        loss = nsp_loss + mlm_loss
+
         self.optim.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(parameters=self.model.parameters(), max_norm=self.settings.clip)
         self.optim.step()
 
         predictions = outputs.detach().round().to(dtype=torch.int32)
-        return loss.item(), predictions
+        return nsp_loss.item(), mlm_loss.item(), predictions
 
     def test_step(self, batch, nsp_labels, mlm_labels):
         with torch.no_grad():
-            loss, outputs = self.forward(batch, nsp_labels, mlm_labels)
+            nsp_loss, mlm_loss, outputs = self.forward(batch, nsp_labels, mlm_labels)
 
         predictions = outputs.detach().round().to(dtype=torch.int32)
-        return loss.item(), predictions
+        return nsp_loss.item(), mlm_loss.item(), predictions
 
     def forward(self, batch, nsp_labels, mlm_labels):
         device = self.model.device
@@ -95,16 +100,12 @@ class Trainer:
             batch_size = model_outputs.mlm_output.size(0)
             seq_len = model_outputs.mlm_output.size(1)
             vocab_size = model_outputs.mlm_output.size(2)
-
-            # Reshape the outputs and labels
             reshaped_outputs = model_outputs.mlm_output.view(batch_size * seq_len, vocab_size)
             reshaped_labels = mlm_labels.flatten()
 
             mlm_loss = self.mlm_criterion(reshaped_outputs, reshaped_labels)
 
-        loss = nsp_loss + mlm_loss
-
-        return loss, model_outputs.nsp_output
+        return nsp_loss, mlm_loss, model_outputs.nsp_output
 
     def lr_update(self, train_steps: int):
         d = self.model.n_features
@@ -116,7 +117,8 @@ class Trainer:
     def train(self, train_loader, val_loader):
         train_gts = []
         train_preds = []
-        steps_loss = 0.0
+        nsp_steps_loss = 0.0
+        mlm_steps_loss = 0.0
         train_steps = 0
 
         self.model.train()
@@ -126,21 +128,27 @@ class Trainer:
                 if self.settings.warmup_steps:
                     self.lr_update(train_steps)
 
-                loss, predictions = self.train_step(inputs, nsp_labels, mlm_labels)
+                nsp_loss, mlm_loss, predictions = self.train_step(inputs, nsp_labels, mlm_labels)
 
-                steps_loss += loss
+                nsp_steps_loss += nsp_loss
+                mlm_steps_loss += mlm_loss
                 train_steps += 1    
                 train_gts.extend(nsp_labels.to(dtype=torch.int32).tolist())
                 train_preds.extend(predictions.squeeze(dim=1).tolist())
 
                 if not train_steps % self.settings.view_step:
-                    display_loss = steps_loss / self.settings.view_step
-                    print(f"Epoch {epoch+1} | Steps {train_steps} | Loss: {(display_loss):.4f}")
+                    nsp_display_loss = nsp_steps_loss / self.settings.view_step
+                    mlm_display_loss = mlm_steps_loss / self.settings.view_step
+                    total_display_loss = nsp_display_loss + mlm_display_loss
+                    print(f"Epoch {epoch+1} | Steps {train_steps} | Loss: {(total_display_loss):.4f} | NSP loss: {(nsp_display_loss):.4f} | MLM loss: {(mlm_display_loss):.4f}")
 
-                    self.monitor.train_loss.append(display_loss)
+                    self.monitor.nsp_train_loss.append(nsp_display_loss)
+                    self.monitor.mlm_train_loss.append(mlm_display_loss)
+                    self.monitor.train_loss.append(total_display_loss)
                     self.monitor.train_acc.append(accuracy(train_gts, train_preds))
 
-                    steps_loss = 0.0
+                    nsp_steps_loss = 0.0
+                    mlm_steps_loss = 0.0
                     train_gts = []
                     train_preds = []
 
@@ -158,26 +166,32 @@ class Trainer:
 
     def validate(self, loader, testing: bool=False):
         steps = 0
-        total_loss = 0.0
+        nsp_loss_total = 0.0
+        mlm_loss_total = 0.0
 
         ground_truth = []
         all_predictions = []
 
         self.model.eval()
         for inputs, nsp_labels, mlm_labels in loader:
-            loss, predictions = self.test_step(inputs, nsp_labels, mlm_labels)
+            nsp_loss, mlm_loss, predictions = self.test_step(inputs, nsp_labels, mlm_labels)
 
-            total_loss += loss
+            nsp_loss_total += nsp_loss
+            mlm_loss_total += mlm_loss
             steps += 1
 
             ground_truth.extend(nsp_labels.to(dtype=torch.int32).tolist())
             all_predictions.extend(predictions.squeeze(dim=1).tolist())
 
         if not testing:
-            display_loss = total_loss / steps
-            print(f"Validation loss: {(total_loss / steps):.4f}")
+            nsp_display_loss = nsp_loss_total / steps
+            mlm_display_loss = mlm_loss_total / steps
+            display_loss_total = nsp_display_loss + mlm_display_loss
+            print(f"Validation loss: {(display_loss_total):.4f} | NSP loss: {(nsp_display_loss):.4f} | MLM loss: {(mlm_display_loss):.4f}")
 
-            self.monitor.val_loss.append(display_loss)
+            self.monitor.nsp_train_loss.append(nsp_display_loss)
+            self.monitor.mlm_train_loss.append(mlm_display_loss)
+            self.monitor.train_loss.append(display_loss_total)
             self.monitor.val_acc.append(accuracy(ground_truth, all_predictions))
 
         evaluate(ground_truth,
