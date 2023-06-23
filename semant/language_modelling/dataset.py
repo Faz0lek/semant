@@ -132,9 +132,9 @@ if __name__ == "__main__":
     tokenizer = build_tokenizer()
     data_train = load_data(PATH)
 
-    dataset = LMDataset(data_train, tokenizer, seq_len=65, fixed=True)
+    dataset = LMDataset(data_train, tokenizer, seq_len=80, fixed=True)
 
-    encoding, nsp_label, mlm_labels = dataset[3]
+    encoding, nsp_label, mlm_labels = dataset[1]
 
     ids = encoding["input_ids"].tolist()[0]
     attention_mask = encoding["attention_mask"].tolist()[0]

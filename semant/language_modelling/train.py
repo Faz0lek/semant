@@ -145,6 +145,7 @@ def main(args):
         epochs=args.epochs,
         warmup_steps=args.warmup_steps,
         save_path=args.save_path,
+        fixed_sep=args.fixed_sep,
     )
 
     trainer = Trainer(model, tokenizer, trainer_settings)

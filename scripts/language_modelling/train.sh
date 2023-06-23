@@ -23,10 +23,10 @@ python -u $SCRIPTS_DIR/train.py \
     --mlm \
     --epochs 1000 \
     --batch-size 6 \
-    --lr 5e-5 \
+    --lr 5e-4 \
     --clip 3.0 \
     --view-step 100 \
-    --val-step 500 \
+    --val-step 100 \
     --warmup-steps 0 \
     --seq-len 128 \
     --save-path $SAVE_DIR

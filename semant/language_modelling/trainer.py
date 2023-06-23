@@ -26,6 +26,7 @@ class TrainerSettings:
     epochs: int
     warmup_steps: int
     save_path: str
+    fixed_sep: bool
 
 
 @dataclass
@@ -157,8 +158,13 @@ class Trainer:
                     self.validate(val_loader)
     
                     # Save model checkpoint
-                    path = os.path.join(self.settings.save_path, f"checkpoint{train_steps}.pth")
-                    torch.save(self.model.state_dict(), path)
+                    path = os.path.join(self.settings.save_path, f"checkpoint_{train_steps}.pth")
+                    torch.save({
+                        "model_state_dict": self.model.state_dict(),
+                        "seq_len": self.model.seq_len,
+                        "sep": self.model.sep,
+                        "fixed_sep": self.settings.fixed_sep,
+                        }, path)
 
                     self.model.train()
 
@@ -189,18 +195,23 @@ class Trainer:
             display_loss_total = nsp_display_loss + mlm_display_loss
             print(f"Validation loss: {(display_loss_total):.4f} | NSP loss: {(nsp_display_loss):.4f} | MLM loss: {(mlm_display_loss):.4f}")
 
-            self.monitor.nsp_train_loss.append(nsp_display_loss)
-            self.monitor.mlm_train_loss.append(mlm_display_loss)
-            self.monitor.train_loss.append(display_loss_total)
+            self.monitor.nsp_val_loss.append(nsp_display_loss)
+            self.monitor.mlm_val_loss.append(mlm_display_loss)
+            self.monitor.val_loss.append(display_loss_total)
             self.monitor.val_acc.append(accuracy(ground_truth, all_predictions))
 
         evaluate(ground_truth,
                  all_predictions,
                  self.monitor.train_loss,
+                 self.monitor.nsp_train_loss,
+                 self.monitor.mlm_train_loss,
                  self.monitor.val_loss,
+                 self.monitor.nsp_val_loss,
+                 self.monitor.mlm_val_loss,
                  self.monitor.train_acc,
                  self.monitor.val_acc,
                  self.settings.view_step,
                  self.settings.val_step,
                  full=testing,
+                 path=self.settings.save_path,
         )
