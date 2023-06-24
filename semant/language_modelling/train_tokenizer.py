@@ -7,6 +7,7 @@
 import argparse
 import os
 import sys
+from typing import List
 
 from utils import load_data
 
@@ -26,7 +27,7 @@ def parse_arguments():
     return args
 
 
-def get_training_corpus(data: list):
+def get_training_corpus(data: typing.List[str]):
     return (data[i : i + 1000] for i in range(0, len(data), 1000))
 
 

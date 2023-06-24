@@ -4,15 +4,16 @@ Date -- 02.06.2023
 Author -- Martin Kostelnik
 """
 
-import argparse
-import typing
-from dataclasses import dataclass
+from typing import List, Tuple
+from dataclasses import dataclass, field
 import os
 
 import torch
 from torch import nn
 
 from utils import evaluate, accuracy
+from model import LanguageModel
+from transformers import BertTokenizerFast
 
 
 @dataclass
@@ -31,20 +32,58 @@ class TrainerSettings:
 
 @dataclass
 class TrainerMonitor:
-    nsp_train_loss: list
-    mlm_train_loss: list
-    train_loss: list
-    nsp_val_loss: list
-    mlm_val_loss: list
-    val_loss: list
-    train_acc: list
-    val_acc: list
+    nsp_train_loss: List[float] = field(default_factory=list)
+    mlm_train_loss: List[float] = field(default_factory=list)
+    train_loss: List[float] = field(default_factory=list)
+    nsp_val_loss: List[float] = field(default_factory=list)
+    mlm_val_loss: List[float] = field(default_factory=list)
+    val_loss: List[float] = field(default_factory=list)
+    train_acc: List[float] = field(default_factory=list)
+    val_acc: List[float] = field(default_factory=list)
+    test_mistakes: List[Tuple[str, str, int, int]] = field(default_factory=list)
+
+    def save_test_mistakes(self, path):
+        sentences_path = os.path.join(path, "sentences.txt")
+        dashes_path = os.path.join(path, "dash.txt")
+        others_path = os.path.join(path, "others.txt")
+        pozn_path = os.path.join(path, "pozn.txt")
+        numbers_path = os.path.join(path, "numbers.txt")
+
+        with open(sentences_path, "w") as sentences_f, \
+             open(dashes_path, "w") as dashes_f, \
+             open(others_path, "w") as others_f, \
+             open(pozn_path, "w") as pozn_f, \
+             open(numbers_path, "w") as numbers_f:
+
+            for sen1, sen2, t, p in self.test_mistakes:
+                end_char = sen1[-1]
+                end_word = sen1.split()[-1]
+
+                s = f"{sen1}\t{sen2}\tt{t}\tp{p}"
+
+                if "Pozn. překl." in sen1 or "Pozn. překl." in sen2 or \
+                "Pozn. vydavatelova." in sen1 or "Pozn. vydavatelova." in sen2 or \
+                "Pozn. autorova." in sen1 or "Pozn. autorova." in sen2:
+                    print(s, file=pozn_f)
+                elif end_char in ".?!;)":
+                    print(s, file=sentences_f)
+                elif end_word.isnumeric():
+                    print(s, file=numbers_f)
+                elif end_char == "-":
+                    print(s, file=dashes_f)
+                else:
+                    print(s, file=others_f)
 
 
 class Trainer:
-    def __init__(self, model, tokenizer, settings: dict):
+    def __init__(
+            self,
+            model: LanguageModel,
+            tokenizer: BertTokenizerFast,
+            settings: TrainerSettings
+            ):
         self.settings = settings
-        self.monitor = TrainerMonitor([], [], [], [], [], [], [], [])
+        self.monitor = TrainerMonitor()
 
         self.model = model
         self.tokenizer = tokenizer
@@ -186,8 +225,14 @@ class Trainer:
             mlm_loss_total += mlm_loss
             steps += 1
 
-            ground_truth.extend(nsp_labels.to(dtype=torch.int32).tolist())
-            all_predictions.extend(predictions.squeeze(dim=1).tolist())
+            ground_truth.extend(t := nsp_labels.to(dtype=torch.int32).tolist())
+            all_predictions.extend(p := predictions.squeeze(dim=1).tolist())
+
+            # Let's assume that batch_size is set to 1 for testing
+            if testing and t[0] != p[0]:
+                entry = (inputs['sen1'][0], inputs['sen2'][0], int(t[0]), int(p[0]))
+                self.monitor.test_mistakes.append(entry)
+
 
         if not testing:
             nsp_display_loss = nsp_loss_total / steps
@@ -199,6 +244,9 @@ class Trainer:
             self.monitor.mlm_val_loss.append(mlm_display_loss)
             self.monitor.val_loss.append(display_loss_total)
             self.monitor.val_acc.append(accuracy(ground_truth, all_predictions))
+
+        if testing:
+            self.monitor.save_test_mistakes(self.settings.save_path)
 
         evaluate(ground_truth,
                  all_predictions,

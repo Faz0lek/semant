@@ -5,13 +5,16 @@ Author -- Martin Kostelnik
 """
 
 import torch
+from typing import List
+
+from transformers import BertTokenizerFast
 
 
 class LMDataset(torch.utils.data.Dataset):
     def __init__(
         self,
-        data,
-        tokenizer,
+        data: List[str],
+        tokenizer: BertTokenizerFast,
         seq_len: int = 128,
         fixed: bool = False,
         maskin_prob: float = 0.15,
@@ -25,10 +28,6 @@ class LMDataset(torch.utils.data.Dataset):
         self.data = data
         self.tokenizer = tokenizer
 
-        # self.CLS_TOKEN = 2
-        # self.SEP_TOKEN = 3
-        # self.PAD_TOKEN = 0
-        # self.MASK_TOKEN = 4
         self.CLS_TOKEN = tokenizer.cls_token_id
         self.SEP_TOKEN = tokenizer.sep_token_id
         self.PAD_TOKEN = tokenizer.pad_token_id
@@ -53,6 +52,8 @@ class LMDataset(torch.utils.data.Dataset):
 
         input_ids_masked, mlm_labels = self.get_masked_input_ids(tokenizer_output["input_ids"])
         tokenizer_output["input_ids_masked"] = input_ids_masked
+        tokenizer_output["sen1"] = sen1
+        tokenizer_output["sen2"] = sen2
 
         return tokenizer_output, float(nsp_label), mlm_labels
 
@@ -100,7 +101,7 @@ class LMDataset(torch.utils.data.Dataset):
 
         return result
 
-    def get_masked_input_ids(self, input_ids):
+    def get_masked_input_ids(self, input_ids: torch.FloatTensor):
         shape = input_ids.size()
         labels = torch.ones(*shape, dtype=torch.int64) * -100
         masked_ids = input_ids.clone()

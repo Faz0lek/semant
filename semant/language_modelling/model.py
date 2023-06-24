@@ -69,11 +69,11 @@ class LanguageModelOutput():
 
 class LanguageModel(nn.Module):
     def __init__(self,
-        bert,
+        bert: BertModel,
         device,
-        name,
-        mlm_head: nn.Module = None,
-        nsp_head: nn.Module = None,
+        name: str,
+        mlm_head: CLSHead = None,
+        nsp_head: CLSHead = None,
         seq_len: int = 128,
         sep: bool = False,
         dropout_prob: float = 0.1,

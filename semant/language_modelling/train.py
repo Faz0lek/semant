@@ -1,4 +1,4 @@
-"""NSP model training.
+"""Bert-like language model training.
 
 Date -- 24.05.2023
 Author -- Martin Kostelnik
@@ -6,7 +6,7 @@ Author -- Martin Kostelnik
 
 import argparse
 import sys
-import typing
+from typing import Tuple
 import os
 from time import perf_counter
 
@@ -67,14 +67,14 @@ def prepare_loaders(
     ratio: float,
     seq_len: int,
     fixed: bool,
-) -> tuple:
+) -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     start = perf_counter()
     print(f"Loading train data from {train_path} ...")
     data_train = load_data(train_path)
     dataset = LMDataset(data_train, tokenizer, seq_len=seq_len, fixed=fixed)
 
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [ratio, 1 - ratio])
-    
+
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
     end = perf_counter()
@@ -85,7 +85,7 @@ def prepare_loaders(
     print(f"Loading test data from {test_path} ...")
     data_test = load_data(test_path)
     test_dataset = LMDataset(data_test, tokenizer, seq_len=seq_len, fixed=fixed)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1)
     end = perf_counter()
     t = end - start
     print(f"Test data loaded. n_samples = {len(test_dataset)}\t took {(t / 60):.1f} m")
