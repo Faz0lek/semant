@@ -145,12 +145,13 @@ def build_model(
         name = f"Custom model with {out_features} features"
 
     bert.resize_token_embeddings(vocab_size)
+    n_features = bert.config.hidden_size
 
     if mlm:
-        mlm_head = CLSHead(out_features, output_size=vocab_size)
+        mlm_head = CLSHead(n_features, output_size=vocab_size)
     
     if nsp:
-        nsp_head = CLSHead(out_features)
+        nsp_head = CLSHead(n_features)
 
     model = LanguageModel(
         bert,
