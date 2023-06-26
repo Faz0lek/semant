@@ -18,8 +18,7 @@ from transformers import BertTokenizerFast
 
 @dataclass
 class TrainerSettings:
-    nsp: bool
-    mlm: bool
+    mlm_level: int
     lr: float
     clip: float
     view_step: int
@@ -89,14 +88,17 @@ class Trainer:
         self.tokenizer = tokenizer
 
         self.optim = torch.optim.Adam(self.model.parameters(), self.settings.lr)
-        self.nsp_criterion = nn.BCELoss() if self.settings.nsp else None
-        self.mlm_criterion = nn.CrossEntropyLoss() if self.settings.mlm else None
-
-        assert self.nsp_criterion or self.mlm_criterion
+        self.nsp_criterion = nn.BCELoss()
+        self.mlm_criterion = nn.CrossEntropyLoss() if self.settings.mlm_level == 2 else None
 
     def train_step(self, batch, nsp_labels, mlm_labels):
         nsp_loss, mlm_loss, outputs = self.forward(batch, nsp_labels, mlm_labels)
-        loss = nsp_loss + mlm_loss
+
+        loss = nsp_loss
+        mlm_loss_val = None
+        if mlm_loss:
+            loss = loss + mlm_loss
+            mlm_loss_val = mlm_loss.item()
 
         self.optim.zero_grad()
         loss.backward()
@@ -104,22 +106,24 @@ class Trainer:
         self.optim.step()
 
         predictions = outputs.detach().round().to(dtype=torch.int32)
-        return nsp_loss.item(), mlm_loss.item(), predictions
+
+        return nsp_loss.item(), mlm_loss_val, predictions
 
     def test_step(self, batch, nsp_labels, mlm_labels):
         with torch.no_grad():
             nsp_loss, mlm_loss, outputs = self.forward(batch, nsp_labels, mlm_labels)
 
         predictions = outputs.detach().round().to(dtype=torch.int32)
-        return nsp_loss.item(), mlm_loss.item(), predictions
+
+        mlm_loss_val = mlm_loss.item() if mlm_loss else None
+
+        return nsp_loss, mlm_loss_val, predictions
 
     def forward(self, batch, nsp_labels, mlm_labels):
         device = self.model.device
 
-        if self.mlm_criterion:
-            input_ids = batch["input_ids_masked"].squeeze(dim=1).to(device)
-        else:
-            input_ids = batch["input_ids"].squeeze(dim=1).to(device)
+        key = "input_ids_masked" if self.settings.mlm_level else "input_ids"
+        input_ids = batch[key].squeeze(dim=1).to(device)
 
         token_type_ids = batch["token_type_ids"].squeeze(dim=1).to(device)
         attention_mask = batch["attention_mask"].squeeze(dim=1).to(device)
@@ -133,10 +137,10 @@ class Trainer:
             attention_mask=attention_mask,
         )
 
-        if self.nsp_criterion:
-            nsp_loss = self.nsp_criterion(model_outputs.nsp_output, nsp_labels)
-
-        if self.settings.mlm:
+        nsp_loss = self.nsp_criterion(model_outputs.nsp_output, nsp_labels)
+        
+        mlm_loss = None
+        if self.mlm_criterion: # MLM criterion exists only if mlm_level == 2
             batch_size = model_outputs.mlm_output.size(0)
             seq_len = model_outputs.mlm_output.size(1)
             vocab_size = model_outputs.mlm_output.size(2)
@@ -171,7 +175,7 @@ class Trainer:
                 nsp_loss, mlm_loss, predictions = self.train_step(inputs, nsp_labels, mlm_labels)
 
                 nsp_steps_loss += nsp_loss
-                mlm_steps_loss += mlm_loss
+                mlm_steps_loss += mlm_loss if mlm_loss else 0.0
                 train_steps += 1    
                 train_gts.extend(nsp_labels.to(dtype=torch.int32).tolist())
                 train_preds.extend(predictions.squeeze(dim=1).tolist())
@@ -180,10 +184,14 @@ class Trainer:
                     nsp_display_loss = nsp_steps_loss / self.settings.view_step
                     mlm_display_loss = mlm_steps_loss / self.settings.view_step
                     total_display_loss = nsp_display_loss + mlm_display_loss
-                    print(f"Epoch {epoch+1} | Steps {train_steps} | Loss: {(total_display_loss):.4f} | NSP loss: {(nsp_display_loss):.4f} | MLM loss: {(mlm_display_loss):.4f}")
 
-                    self.monitor.nsp_train_loss.append(nsp_display_loss)
-                    self.monitor.mlm_train_loss.append(mlm_display_loss)
+                    out_s = f"Epoch {epoch+1} | Steps {train_steps} | Loss: {(total_display_loss):.4f}"
+                    if self.mlm_criterion:
+                        out_s += f" | NSP loss: {(nsp_display_loss):.4f} | MLM loss: {(mlm_display_loss):.4f}"
+                        self.monitor.mlm_train_loss.append(mlm_display_loss)
+                        self.monitor.nsp_train_loss.append(nsp_display_loss)
+                    print(out_s)
+                
                     self.monitor.train_loss.append(total_display_loss)
                     self.monitor.train_acc.append(accuracy(train_gts, train_preds))
 
@@ -222,7 +230,7 @@ class Trainer:
             nsp_loss, mlm_loss, predictions = self.test_step(inputs, nsp_labels, mlm_labels)
 
             nsp_loss_total += nsp_loss
-            mlm_loss_total += mlm_loss
+            mlm_loss_total += mlm_loss if mlm_loss else 0.0
             steps += 1
 
             ground_truth.extend(t := nsp_labels.to(dtype=torch.int32).tolist())
@@ -238,10 +246,14 @@ class Trainer:
             nsp_display_loss = nsp_loss_total / steps
             mlm_display_loss = mlm_loss_total / steps
             display_loss_total = nsp_display_loss + mlm_display_loss
-            print(f"Validation loss: {(display_loss_total):.4f} | NSP loss: {(nsp_display_loss):.4f} | MLM loss: {(mlm_display_loss):.4f}")
 
-            self.monitor.nsp_val_loss.append(nsp_display_loss)
-            self.monitor.mlm_val_loss.append(mlm_display_loss)
+            out_s = f"Validation loss: {(display_loss_total):.4f}"
+            if self.mlm_criterion:
+                out_s += f" | NSP loss: {(nsp_display_loss):.4f} | MLM loss: {(mlm_display_loss):.4f}"
+                self.monitor.nsp_val_loss.append(nsp_display_loss)
+                self.monitor.mlm_val_loss.append(mlm_display_loss)
+            print(out_s)
+
             self.monitor.val_loss.append(display_loss_total)
             self.monitor.val_acc.append(accuracy(ground_truth, all_predictions))
 

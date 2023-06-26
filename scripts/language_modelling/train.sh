@@ -19,14 +19,13 @@ python -u $SCRIPTS_DIR/train.py \
     --test $BASE/data/books/books-dataset.tst \
     --split 0.8 \
     --features 264 \
-    --nsp \
-    --mlm \
+    --mlm-level 2 \
     --epochs 1000 \
     --batch-size 6 \
-    --lr 5e-4 \
+    --lr 5e-5 \
     --clip 3.0 \
     --view-step 100 \
-    --val-step 100 \
+    --val-step 5000 \
     --warmup-steps 0 \
     --seq-len 128 \
     --save-path $SAVE_DIR

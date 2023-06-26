@@ -109,11 +109,10 @@ class LanguageModel(nn.Module):
 
         model_outputs = LanguageModelOutput()
 
-        if self.nsp_head:
-            # if self.sep, take SEP token embedding, else take pooled CLS token embedding
-            nsp_features = outputs.last_hidden_state[:, self.seq_len // 2, :] if self.sep else outputs[1]
-            nsp_features = self.dropout(nsp_features)
-            model_outputs.nsp_output  = self.nsp_head(nsp_features)
+        # if self.sep, take SEP token embedding, else take pooled CLS token embedding
+        nsp_features = outputs.last_hidden_state[:, self.seq_len // 2, :] if self.sep else outputs[1]
+        nsp_features = self.dropout(nsp_features)
+        model_outputs.nsp_output = self.nsp_head(nsp_features)
 
         if self.mlm_head:
             mlm_features = outputs[0] # Contextual representations of all tokens (last hidden state)
@@ -129,12 +128,11 @@ def build_model(
     device,
     seq_len: int = 128,
     out_features: int = None,
-    mlm: bool = True,
+    mlm_level: int = 0,
     nsp: bool = True,
     sep: bool = False,
 ):
     assert (czert ^ bool(out_features))
-    assert mlm or nsp
 
     if czert:
         bert = BertModel.from_pretrained(CZERT_PATH)
@@ -147,11 +145,8 @@ def build_model(
     bert.resize_token_embeddings(vocab_size)
     n_features = bert.config.hidden_size
 
-    if mlm:
-        mlm_head = CLSHead(n_features, output_size=vocab_size)
-    
-    if nsp:
-        nsp_head = CLSHead(n_features)
+    nsp_head = CLSHead(n_features)
+    mlm_head = CLSHead(n_features, output_size=vocab_size) if mlm_level == 2 else None
 
     model = LanguageModel(
         bert,

@@ -165,65 +165,69 @@ def evaluate(
     if not full:
         return
 
-    fig, axs = plt.subplots(2, 3, figsize=(10, 6))
-    
+    num_subplots = 6 if train_loss_mlm else 4
+    fs = (10, 6) if train_loss_mlm else (7, 6)
+    fig, axs = plt.subplots(2, num_subplots // 2, figsize=fs)
+    axs = axs.flatten()
+
     # ROC
     fpr, tpr, threshold = metrics.roc_curve(ground_truth, predictions)
-    axs[0, 0].plot(fpr, tpr, "b")
-    axs[0, 0].plot([0, 1], [0, 1], "r--")
-    axs[0, 0].set_xlim([0, 1])
-    axs[0, 0].set_ylim([0, 1])
-    axs[0, 0].set_ylabel("TPR")
-    axs[0, 0].set_xlabel("FPR")
-    axs[0, 0].set_title(f"ROC (AUC = {auc:.2f})")
+    axs[0].plot(fpr, tpr, "b")
+    axs[0].plot([0, 1], [0, 1], "r--")
+    axs[0].set_xlim([0, 1])
+    axs[0].set_ylim([0, 1])
+    axs[0].set_ylabel("TPR")
+    axs[0].set_xlabel("FPR")
+    axs[0].set_title(f"ROC (AUC = {auc:.2f})")
 
     # CM
     cm_display = metrics.ConfusionMatrixDisplay.from_predictions(
         ground_truth,
         predictions,
         colorbar=False,
-        ax=axs[0, 1],
+        ax=axs[1],
         display_labels=["IsNextStc", "IsNotNextStc"],
         )
 
     # Total Loss
     x_trn = [val for val in range(view_step, (len(train_loss) + 1) * view_step, view_step)]
     x_val = [val for val in range(val_step, (len(val_loss) + 1) * val_step, val_step)]
-    axs[1, 0].plot(x_trn, train_loss, "r", label="train")
-    axs[1, 0].plot(x_val, val_loss, "g", label="validation")
-    axs[1, 0].legend(fontsize="x-small")
-    axs[1, 0].set_title("Loss")
-    axs[1, 0].set_xlabel("Steps")
-    axs[1, 0].set_ylabel("Value")
-    axs[1, 0].grid()
+    axs[3].plot(x_trn, train_loss, "r", label="train")
+    axs[3].plot(x_val, val_loss, "g", label="validation")
+    axs[3].legend(fontsize="x-small")
+    axs[3].set_title("Loss")
+    axs[3].set_xlabel("Steps")
+    axs[3].set_ylabel("Value")
+    axs[3].grid()
 
     # Accuracy
-    axs[0, 2].plot(x_trn, train_accuracy, "r", label="train")
-    axs[0, 2].plot(x_val, val_accuracy, "g", label="validation")
-    axs[0, 2].legend(fontsize="x-small")
-    axs[0, 2].set_title("Accuracy")
-    axs[0, 2].set_xlabel("Steps")
-    axs[0, 2].set_ylabel("Value")
-    axs[0, 2].set_ylim(0, 1)
-    axs[0, 2].grid()
+    axs[2].plot(x_trn, train_accuracy, "r", label="train")
+    axs[2].plot(x_val, val_accuracy, "g", label="validation")
+    axs[2].legend(fontsize="x-small")
+    axs[2].set_title("Accuracy")
+    axs[2].set_xlabel("Steps")
+    axs[2].set_ylabel("Value")
+    axs[2].set_ylim(0, 1)
+    axs[2].grid()
 
-    # NSP Loss
-    axs[1, 1].plot(x_trn, train_loss_nsp, "r", label="train")
-    axs[1, 1].plot(x_val, val_loss_nsp, "g", label="validation")
-    axs[1, 1].legend(fontsize="x-small")
-    axs[1, 1].set_title("NSP Loss")
-    axs[1, 1].set_xlabel("Steps")
-    axs[1, 1].set_ylabel("Value")
-    axs[1, 1].grid()
+    if num_subplots == 6:
+        # NSP Loss
+        axs[4].plot(x_trn, train_loss_nsp, "r", label="train")
+        axs[4].plot(x_val, val_loss_nsp, "g", label="validation")
+        axs[4].legend(fontsize="x-small")
+        axs[4].set_title("NSP Loss")
+        axs[4].set_xlabel("Steps")
+        axs[4].set_ylabel("Value")
+        axs[4].grid()
 
-    # MLM Loss
-    axs[1, 2].plot(x_trn, train_loss_mlm, "r", label="train")
-    axs[1, 2].plot(x_val, val_loss_mlm, "g", label="validation")
-    axs[1, 2].legend(fontsize="x-small")
-    axs[1, 2].set_title("MLM Loss")
-    axs[1, 2].set_xlabel("Steps")
-    axs[1, 2].set_ylabel("Value")
-    axs[1, 2].grid()
+        # MLM Loss
+        axs[5].plot(x_trn, train_loss_mlm, "r", label="train")
+        axs[5].plot(x_val, val_loss_mlm, "g", label="validation")
+        axs[5].legend(fontsize="x-small")
+        axs[5].set_title("MLM Loss")
+        axs[5].set_xlabel("Steps")
+        axs[5].set_ylabel("Value")
+        axs[5].grid()
 
     plt.tight_layout()
     p = os.path.join(path, "evaluation.pdf")

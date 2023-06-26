@@ -17,6 +17,7 @@ from dataset import LMDataset
 from utils import build_tokenizer, load_data, n_params, evaluate
 from model import build_model
 from trainer import Trainer, TrainerSettings
+from transformers import BertTokenizerFast
 
 
 def parse_arguments():
@@ -34,9 +35,8 @@ def parse_arguments():
     group_model.add_argument("--czert", action="store_true", help="Train baseline CZERT instead of our model.")
     group_model.add_argument("--features", type=int, default=0, choices=[0, 72, 132, 264, 516], help="Number of features of BERT model.")
     
-    # Training objectives
-    parser.add_argument("--nsp", action="store_true", help="Train on NSP objective.")
-    parser.add_argument("--mlm", action="store_true", help="Train on MLM objective.")
+    # MLM
+    parser.add_argument("--mlm-level", type=int, default=0, choices=[0, 1, 2], help="0 -- no MLM ; 1 -- Masking only; 2 -- Masking + MLM loss.")
 
     # Trainer settings
     parser.add_argument("--epochs", type=int, default=1, help="Number of epochs.")
@@ -62,7 +62,7 @@ def parse_arguments():
 def prepare_loaders(
     train_path: str,
     test_path: str,
-    tokenizer,
+    tokenizer: BertTokenizerFast,
     batch_size: int,
     ratio: float,
     seq_len: int,
@@ -121,8 +121,7 @@ def main(args):
         device,
         args.seq_len,
         args.features,
-        args.mlm,
-        args.nsp,
+        args.mlm_level,
         args.sep,
     )
 
@@ -136,8 +135,7 @@ def main(args):
     # Trainer settings
     print("Creating Trainer instance ...")
     trainer_settings = TrainerSettings(
-        nsp=args.nsp,
-        mlm=args.mlm,
+        mlm_level=args.mlm_level,
         lr=args.lr,
         clip=args.clip,
         view_step=args.view_step,
