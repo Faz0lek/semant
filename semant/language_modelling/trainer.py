@@ -89,6 +89,7 @@ class Trainer:
         self.tokenizer = tokenizer
 
         self.optim = torch.optim.Adam(self.model.parameters(), self.settings.lr)
+
         self.nsp_criterion = nn.BCELoss()
         self.mlm_criterion = nn.CrossEntropyLoss() if self.settings.mlm_level == 2 else None
 
@@ -177,6 +178,7 @@ class Trainer:
 
                 nsp_steps_loss += nsp_loss
                 mlm_steps_loss += mlm_loss if mlm_loss else 0.0
+      
                 train_steps += 1    
                 train_gts.extend(nsp_labels.to(dtype=torch.int32).tolist())
                 train_preds.extend(predictions.squeeze(dim=1).tolist())

@@ -55,6 +55,7 @@ class LMDataset(torch.utils.data.Dataset):
         tokenizer_output["sen1"] = sen1
         tokenizer_output["sen2"] = sen2
 
+
         return tokenizer_output, float(nsp_label), mlm_labels
 
     def __len__(self):
@@ -134,7 +135,6 @@ if __name__ == "__main__":
     data_train = load_data(PATH)
 
     dataset = LMDataset(data_train, tokenizer, seq_len=80, fixed=True)
-
     encoding, nsp_label, mlm_labels = dataset[1]
 
     ids = encoding["input_ids"].tolist()[0]

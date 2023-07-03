@@ -17,6 +17,7 @@ from dataset import LMDataset
 from utils import build_tokenizer, load_data, n_params, evaluate
 from model import build_model
 from trainer import Trainer, TrainerSettings
+
 from transformers import BertTokenizerFast
 
 from safe_gpu import safe_gpu
@@ -77,7 +78,7 @@ def prepare_loaders(
     dataset = LMDataset(data_train, tokenizer, seq_len=seq_len, fixed=fixed)
 
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [ratio, 1 - ratio])
-
+    
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_loaders=1)
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_loaders=1)
     end = perf_counter()
