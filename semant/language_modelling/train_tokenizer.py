@@ -9,7 +9,7 @@ import os
 import sys
 from typing import List, Iterable
 
-from utils import load_data
+from utils import load_data, CZERT_PATH
 
 from transformers import BertTokenizerFast
 
@@ -36,10 +36,10 @@ def main(args):
     data = load_data(args.data, raw=True)
     print(f"Text corpus loaded, n_samples = {len(data)}")
 
-    tokenizer = BertTokenizerFast(do_lower_case=False, strip_accents=False)
+    base_tokenizer = BertTokenizerFast.from_pretrained(CZERT_PATH)
 
     print("Starting training ...")
-    tokenizer.train_new_from_iterator(get_training_corpus(data), args.vocab_size)
+    tokenizer = base_tokenizer.train_new_from_iterator(get_training_corpus(data), args.vocab_size)
     print("Training finished.\nSaving ...")
 
     os.makedirs(args.save_path, exist_ok=True)
