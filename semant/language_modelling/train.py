@@ -19,6 +19,8 @@ from model import build_model
 from trainer import Trainer, TrainerSettings
 from transformers import BertTokenizerFast
 
+from safe_gpu import safe_gpu
+
 
 def parse_arguments():
     print(' '.join(sys.argv))
@@ -40,6 +42,7 @@ def parse_arguments():
 
     # Trainer settings
     parser.add_argument("--epochs", type=int, default=1, help="Number of epochs.")
+    parser.add_argument("--steps", type=int, default=-1, help="Limit number of steps for finer control of training time.")
     parser.add_argument("--batch-size", type=int, default=1, help="Batch size.")
     parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate.")
     parser.add_argument("--clip", type=float, default=1.0, help="Gradient clipping.")
@@ -75,8 +78,8 @@ def prepare_loaders(
 
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [ratio, 1 - ratio])
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_loaders=1)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_loaders=1)
     end = perf_counter()
     t = end - start
     print(f"Train data loaded. n_samples = {len(dataset)}\ttrain = {len(train_dataset)}\tval = {len(val_dataset)}\ttook {(t / 60):.1f} m")
@@ -144,6 +147,7 @@ def main(args):
         warmup_steps=args.warmup_steps,
         save_path=args.save_path,
         fixed_sep=args.fixed_sep,
+        steps_limit=args.steps,
     )
 
     trainer = Trainer(model, tokenizer, trainer_settings)
@@ -165,5 +169,6 @@ def main(args):
 
 
 if __name__ == "__main__":
+    safe_gpu.claim_gpus()
     args = parse_arguments()
     main(args)

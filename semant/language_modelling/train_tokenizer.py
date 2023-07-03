@@ -7,7 +7,7 @@
 import argparse
 import os
 import sys
-from typing import List
+from typing import List, Iterable
 
 from utils import load_data
 
@@ -27,7 +27,7 @@ def parse_arguments():
     return args
 
 
-def get_training_corpus(data: typing.List[str]):
+def get_training_corpus(data: List[str]) -> Iterable[List[str]]:
     return (data[i : i + 1000] for i in range(0, len(data), 1000))
 
 
@@ -36,14 +36,14 @@ def main(args):
     data = load_data(args.data, raw=True)
     print(f"Text corpus loaded, n_samples = {len(data)}")
 
-    tokenizer = BertTokenizerFast()
+    tokenizer = BertTokenizerFast(do_lower_case=False, strip_accents=False)
 
     print("Starting training ...")
     tokenizer.train_new_from_iterator(get_training_corpus(data), args.vocab_size)
     print("Training finished.\nSaving ...")
 
     os.makedirs(args.save_path, exist_ok=True)
-    tokenizer.save_pretrained(os.path.join(args.save_path, "books-tokenizer"))
+    tokenizer.save_pretrained(os.path.join(args.save_path, f"books-tokenizer-{args.vocab_size}"))
 
 
 if __name__ == "__main__":

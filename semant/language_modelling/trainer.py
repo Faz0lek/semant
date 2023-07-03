@@ -27,6 +27,7 @@ class TrainerSettings:
     warmup_steps: int
     save_path: str
     fixed_sep: bool
+    steps_limit: int
 
 
 @dataclass
@@ -117,7 +118,7 @@ class Trainer:
 
         mlm_loss_val = mlm_loss.item() if mlm_loss else None
 
-        return nsp_loss, mlm_loss_val, predictions
+        return nsp_loss.item(), mlm_loss_val, predictions
 
     def forward(self, batch, nsp_labels, mlm_labels):
         device = self.model.device
@@ -214,6 +215,9 @@ class Trainer:
                         }, path)
 
                     self.model.train()
+
+                if train_steps == self.settings.steps_limit:
+                    return
 
             print(f"Epoch {epoch+1} finished.")
 
