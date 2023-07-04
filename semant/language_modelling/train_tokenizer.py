@@ -9,9 +9,9 @@ import os
 import sys
 from typing import List, Iterable
 
-from utils import load_data, CZERT_PATH
-
 from transformers import BertTokenizerFast
+
+from semant.language_modelling.utils import load_data, CZERT_PATH
 
 
 def parse_arguments():

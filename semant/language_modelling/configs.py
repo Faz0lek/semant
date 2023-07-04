@@ -5,7 +5,7 @@
 """
 
 from transformers import BertConfig, BertModel
-from utils import n_params, model_size
+from semant.language_modelling.utils import n_params, model_size
 
 """Description
 
@@ -40,7 +40,7 @@ bert_config_72 = {
     "num_attention_heads": 12,
     "num_hidden_layers": 12,
     "position_embedding_type": "absolute",
-    "vocab_size": 30522,
+    "vocab_size": 10000,
 }
 
 
@@ -56,7 +56,7 @@ bert_config_132 = {
     "num_attention_heads": 12,
     "num_hidden_layers": 12,
     "position_embedding_type": "absolute",
-    "vocab_size": 30522,
+    "vocab_size": 10000,
 }
 
 
@@ -72,7 +72,7 @@ bert_config_264 = {
     "num_attention_heads": 12,
     "num_hidden_layers": 12,
     "position_embedding_type": "absolute",
-    "vocab_size": 30522,
+    "vocab_size": 10000,
 }
 
 
@@ -88,7 +88,7 @@ bert_config_516 = {
     "num_attention_heads": 12,
     "num_hidden_layers": 12,
     "position_embedding_type": "absolute",
-    "vocab_size": 30522,
+    "vocab_size": 10000,
 }
 
 
