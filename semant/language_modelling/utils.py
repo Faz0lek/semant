@@ -261,16 +261,6 @@ def model_size(model) -> float:
     return size_all
 
 
-def build_tokenizer(path: str = None):
-    if not path:
-        path = CZERT_PATH
-
-    tokenizer = BertTokenizerFast.from_pretrained(path)
-    tokenizer.add_special_tokens({"additional_special_tokens": [JOKER]})
-
-    return tokenizer
-
-
 if __name__ == "__main__":
     gt = [1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1]
     predictions = [1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1]
