@@ -8,3 +8,4 @@ data/
 tmp.py
 evaluation.pdf
 .vscode/
+tokenizers/
