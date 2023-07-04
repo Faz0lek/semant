@@ -7,17 +7,15 @@ Author -- Martin Kostelnik
 import argparse
 import sys
 from typing import Tuple
-import os
 from time import perf_counter
 
 import torch
-from torch import nn
 
-from dataset import LMDataset
-from utils import build_tokenizer, load_data, n_params, evaluate
-from model import build_model
-from trainer import Trainer, TrainerSettings
-from transformers import BertTokenizerFast
+from semant.language_modelling.dataset import LMDataset
+from semant.language_modelling.utils import load_data, n_params
+from semant.language_modelling.tokenizer import build_tokenizer, LMTokenizer
+from semant.language_modelling.model import build_model
+from semant.language_modelling.trainer import Trainer, TrainerSettings
 
 from safe_gpu import safe_gpu
 
@@ -65,21 +63,19 @@ def parse_arguments():
 def prepare_loaders(
     train_path: str,
     test_path: str,
-    tokenizer: BertTokenizerFast,
+    tokenizer: LMTokenizer,
     batch_size: int,
     ratio: float,
-    seq_len: int,
-    fixed: bool,
 ) -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     start = perf_counter()
     print(f"Loading train data from {train_path} ...")
     data_train = load_data(train_path)
-    dataset = LMDataset(data_train, tokenizer, seq_len=seq_len, fixed=fixed)
+    dataset = LMDataset(data_train, tokenizer)
 
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [ratio, 1 - ratio])
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_loaders=1)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_loaders=1)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
     end = perf_counter()
     t = end - start
     print(f"Train data loaded. n_samples = {len(dataset)}\ttrain = {len(train_dataset)}\tval = {len(val_dataset)}\ttook {(t / 60):.1f} m")
@@ -87,7 +83,7 @@ def prepare_loaders(
     start = perf_counter()
     print(f"Loading test data from {test_path} ...")
     data_test = load_data(test_path)
-    test_dataset = LMDataset(data_test, tokenizer, seq_len=seq_len, fixed=fixed)
+    test_dataset = LMDataset(data_test, tokenizer)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1)
     end = perf_counter()
     t = end - start
@@ -102,7 +98,12 @@ def main(args):
     print(f"Training on: {device}")
 
     # Tokenizer
-    tokenizer = build_tokenizer(args.tokenizer_path)
+    print(f"Creating tokenizer from: {args.tokenizer_path} ...")
+    tokenizer = build_tokenizer(
+        args.tokenizer_path,
+        seq_len=args.seq_len,
+        fixed_sep=args.fixed_sep,
+    )
     print(f"Tokenizer created.")
 
     # Data
@@ -112,8 +113,6 @@ def main(args):
         tokenizer,
         args.batch_size,
         args.split,
-        args.seq_len,
-        args.fixed_sep,
     )
 
     # Model
