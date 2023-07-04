@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from torch import nn
 from transformers import BertConfig, BertModel
 
-from utils import CZERT_PATH
-from configs import config_mapping
+from semant.language_modelling.utils import CZERT_PATH
+from semant.language_modelling.configs import config_mapping
 
 
 class CLSHead(nn.Module):
@@ -129,7 +129,6 @@ def build_model(
     seq_len: int = 128,
     out_features: int = None,
     mlm_level: int = 0,
-    nsp: bool = True,
     sep: bool = False,
 ):
     assert (czert ^ bool(out_features))

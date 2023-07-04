@@ -16,7 +16,7 @@ import sys
 import argparse
 import json
 
-from utils import remove_accents
+from semant.language_modelling.utils import remove_accents
 
 
 def parse_arguments():
