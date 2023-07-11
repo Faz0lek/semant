@@ -5,5 +5,6 @@ setup(
     packages=[
         'semant',
         'semant/language_modelling',
+        'semant/sorting',
     ],
 )
