@@ -212,6 +212,8 @@ class Trainer:
                         "seq_len": self.model.seq_len,
                         "sep": self.model.sep,
                         "fixed_sep": self.settings.fixed_sep,
+                        "features": self.model.n_features,
+                        "czert": (self.model.name == "CZERT"),
                         }, path)
 
                     self.model.train()

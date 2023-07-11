@@ -4,7 +4,6 @@ Date -- 24.05.2023
 Author -- Martin Kostelnik
 """
 
-import typing
 from typing import Dict
 from dataclasses import dataclass
 
@@ -21,7 +20,7 @@ class LMTokenizer:
         tokenizer: BertTokenizerFast,
         seq_len: int=128,
         fixed_sep: bool=False,
-        masking_prob: float = 0.15,
+        masking_prob: float=0.15,
     ):
         self.tokenizer = tokenizer
         self.seq_len = seq_len
