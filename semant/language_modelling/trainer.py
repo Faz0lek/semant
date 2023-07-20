@@ -159,15 +159,17 @@ class Trainer:
             group['lr'] = (d ** (-0.5)) * min(((train_steps+1) ** (-0.5)), (train_steps+1) * (self.settings.warmup_steps ** (-1.5)))
 
 
-    def train(self, train_loader, val_loader):
+    def train(self, train_loader, val_loader, steps_completed=0, epochs_completed=0):
         train_gts = []
         train_preds = []
         nsp_steps_loss = 0.0
         mlm_steps_loss = 0.0
-        train_steps = 0
+        train_steps = steps_completed
+        epoch = epochs_completed
 
         self.model.train()
-        for epoch in range(self.settings.epochs):
+        for epoch_offset in range(self.settings.epochs):
+            epoch += epoch_offset
             self.model.train()
             for inputs, nsp_labels, mlm_labels in train_loader:
                 if self.settings.warmup_steps:
@@ -208,12 +210,16 @@ class Trainer:
                     # Save model checkpoint
                     path = os.path.join(self.settings.save_path, f"checkpoint_{train_steps}.pth")
                     torch.save({
-                        "model_state_dict": self.model.state_dict(),
+                        "bert_state_dict": self.model.bert.state_dict(),
+                        "mlm_head_state_dict": self.model.mlm_head.state_dict() if self.model.mlm_head else None,
+                        "nsp_head_state_dict": self.model.nsp_head.state_dict(),
                         "seq_len": self.model.seq_len,
                         "sep": self.model.sep,
                         "fixed_sep": self.settings.fixed_sep,
                         "features": self.model.n_features,
                         "czert": (self.model.name == "CZERT"),
+                        "steps": train_steps,
+                        "epochs": epoch,
                         }, path)
 
                     self.model.train()
@@ -246,7 +252,6 @@ class Trainer:
             if testing and t[0] != p[0]:
                 entry = (inputs['sen1'][0], inputs['sen2'][0], int(t[0]), int(p[0]))
                 self.monitor.test_mistakes.append(entry)
-
 
         if not testing:
             nsp_display_loss = nsp_loss_total / steps
