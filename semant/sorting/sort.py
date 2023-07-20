@@ -9,6 +9,7 @@ import argparse
 import sys
 import itertools
 from typing import List
+from tqdm import tqdm
 
 import torch
 import numpy as np
@@ -17,6 +18,7 @@ from python_tsp.exact import solve_tsp_dynamic_programming
 from semant.language_modelling.model import build_model, LanguageModel
 from semant.language_modelling.tokenizer import build_tokenizer, LMTokenizer
 from semant.language_modelling.utils import load_data
+from semant.sorting.utils import compare_regions
 
 
 BABICKA_PATH = r"/home/martin/semant/data/babicka/babicka.txt"
@@ -76,6 +78,9 @@ def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) ->
     distance_matrix[:, 0] = 0.0
     logging.info("Distance matrix created.")
     
+    # with np.printoptions(precision=2, suppress=True):
+    #     print(distance_matrix)
+
     # Solve TSP
     logging.info("Solving TSP ...")
     permutation, _ = solve_tsp_dynamic_programming(distance_matrix)
@@ -134,16 +139,22 @@ def main(args) -> None:
 
     # Run sorting
     # sorted_data = sort_file(raw_data, tokenizer, model)
-    for region_s, region in zip(babicka_shuffled, babicka):
-        sorted_data = sort_file(region.split("\n"), tokenizer, model)
-        sorted_data = "\n".join(sorted_data)
-        print(f"---------------------------------------------------------------\n")
-        print("TRUE")
-        print(f"{region}\n")
-        print("SORTED")
-        print(f"{sorted_data}\n")
-        print(f"---------------------------------------------------------------")
+    total_hits = 0
+    total_len = 0
+    for region_s, region in tqdm(zip(babicka_shuffled, babicka)):
+        region = region.split("\n")
+        region_s = region_s.split("\n")
+        sorted_data = sort_file(region_s, tokenizer, model)
+        hits = compare_regions(region, sorted_data)
 
+        total_hits += hits
+        total_len += (len(region) - 1)
+        # print("\n".join(region_s))
+        # print()
+        # print("\n".join(region))
+        # print("\n\n\n")
+
+    print(f"{total_hits}/{total_len}\t{(total_hits / total_len):.3f}")
     # Save result
     # with open(args.save_path, "w") as f:
     #     for line in sorted_data:
