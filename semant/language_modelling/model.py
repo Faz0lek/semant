@@ -131,8 +131,6 @@ def build_model(
     mlm_level: int = 0,
     sep: bool = False,
 ):
-    assert (czert ^ bool(out_features))
-
     if czert:
         bert = BertModel.from_pretrained(CZERT_PATH)
         name = "CZERT"

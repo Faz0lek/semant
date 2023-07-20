@@ -36,7 +36,8 @@ def parse_arguments():
     group_model.add_argument("--features", type=int, default=0, choices=[0, 72, 132, 264, 516], help="Number of features of BERT model.")
     
     # MLM
-    parser.add_argument("--mlm-level", type=int, default=0, choices=[0, 1, 2], help="0 -- no MLM ; 1 -- Masking only; 2 -- Masking + MLM loss.")
+    parser.add_argument("--mlm-level", type=int, default=2, choices=[0, 1, 2], help="0 -- no MLM ; 1 -- Masking only; 2 -- Masking + MLM loss.")
+    parser.add_argument("--masking-prob", type=float, default=0.15, help="Masking probability for MLM.")
 
     # Trainer settings
     parser.add_argument("--epochs", type=int, default=1, help="Number of epochs.")
@@ -98,11 +99,13 @@ def main(args):
     print(f"Training on: {device}")
 
     # Tokenizer
-    print(f"Creating tokenizer from: {args.tokenizer_path} ...")
+    tokenizer_str = f"Creating tokenizer" + (f" from {args.tokenizer_path} ..." if args.tokenizer_path else " ...")
+    print(tokenizer_str)
     tokenizer = build_tokenizer(
         args.tokenizer_path,
         seq_len=args.seq_len,
         fixed_sep=args.fixed_sep,
+        masking_prob=args.masking_prob,
     )
     print(f"Tokenizer created.")
 
@@ -116,7 +119,8 @@ def main(args):
     )
 
     # Model
-    print(f"Creating model ...")
+    model_str = f"Creating model" + (f" from {args.model_path} ..." if args.model_path else " ...")
+    print(model_str)
     model = build_model(
         args.czert,
         len(tokenizer),
@@ -126,10 +130,6 @@ def main(args):
         args.mlm_level,
         args.sep,
     )
-
-    if args.model_path:
-        print(f"Loading model from: {args.model_path} ...")
-        model.load_state_dict(torch.load(args.model_path))
 
     model = model.to(device)
     print(f"{model.name} created. (n_params = {(n_params(model) / 1e6):.2f} M)")

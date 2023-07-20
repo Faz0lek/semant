@@ -9,3 +9,5 @@ tmp.py
 evaluation.pdf
 .vscode/
 tokenizers/
+models-backup/
+models_tmp/

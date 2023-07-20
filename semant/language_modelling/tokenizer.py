@@ -130,9 +130,9 @@ class LMTokenizer:
 
 def build_tokenizer(
         path: str=None,
-        seq_len: int=128,
-        fixed_sep: bool=False,
-        masking_prob: float = 0.15,
+        seq_len: int=80,
+        fixed_sep: bool=True,
+        masking_prob: float=0.15,
     ) -> LMTokenizer:
     if path is None: # Create CZERT tokenizer
         base_tokenizer = BertTokenizerFast.from_pretrained(CZERT_PATH)
