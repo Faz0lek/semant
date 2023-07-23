@@ -39,6 +39,7 @@ def main(args):
     logging.info("Loading checkpoint ...")
     checkpoint = torch.load(args.model_path)
     logging.info("Checkpoint loaded.")
+
     # Build tokenizer
     logging.info("Loading tokenizer ...")
     tokenizer = build_tokenizer(
