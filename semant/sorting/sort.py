@@ -114,16 +114,16 @@ def main(args) -> None:
     # Build model
     logging.info("Building model ...")
     model = build_model(
-        czert=False,
+        czert=checkpoint["czert"],
         vocab_size=len(tokenizer),
         device=device,
         seq_len=checkpoint["seq_len"],
-        out_features=516,
-        mlm_level=2,
+        out_features=checkpoint["features"],
+        mlm_level=0,
         sep=checkpoint["sep"],
     )
-    model.load_state_dict(checkpoint["model_state_dict"])
-    model.mlm_head = None
+    model.bert.load_state_dict(checkpoint["bert_state_dict"])
+    model.nsp_head.load_state_dict(checkpoint["nsp_head_state_dict"])
     model = model.to(device)
     model.eval()
     logging.info("Model loaded.")
