@@ -10,10 +10,7 @@ import sys
 import itertools
 from typing import List
 from tqdm import tqdm
-<<<<<<< HEAD
-=======
 import random
->>>>>>> dev
 
 import torch
 import numpy as np
@@ -22,22 +19,15 @@ from python_tsp.exact import solve_tsp_dynamic_programming
 from semant.language_modelling.model import build_model, LanguageModel
 from semant.language_modelling.tokenizer import build_tokenizer, LMTokenizer
 from semant.language_modelling.utils import load_data
-<<<<<<< HEAD
-from semant.sorting.utils import compare_regions
-=======
 from semant.sorting.utils import compare_regions, split_into_regions
 
 from time import perf_counter
->>>>>>> dev
 
 
 BABICKA_PATH = r"/home/martin/semant/data/babicka/babicka.txt"
 BABICKA_SHUFFLED_PATH = r"/home/martin/semant/data/babicka/babicka-shuffled.txt"
-<<<<<<< HEAD
-=======
 BABICKA_EASY_PATH = r"/home/martin/semant/data/babicka/babicka-easy.txt"
 BABICKA_10_PATH = r"/home/martin/semant/data/babicka/babicka_10.txt"
->>>>>>> dev
 
 
 def parse_arguments():
@@ -54,8 +44,6 @@ def parse_arguments():
     return args
 
 
-<<<<<<< HEAD
-=======
 def sort_file_tsp_local(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) -> List[str]:
     """Assumptions:
            1. Errors are local, line that is on index 14 (out of 15) does not correctly belong on index 2
@@ -124,7 +112,6 @@ def sort_file_tsp_local(lines: List[str], tokenizer: LMTokenizer, model: Languag
     return sorted_data
 
 
->>>>>>> dev
 def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) -> List[str]:
     n_lines = len(lines)
 
@@ -132,13 +119,9 @@ def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) ->
     logging.info("Creating distance matrix ...")
     DUMMY_DIST = 10.0
     distance_matrix = [[0.0] + n_lines * [DUMMY_DIST]] # Initialize with dummy point
-<<<<<<< HEAD
-    line_edges = [0.0]
-=======
     # distance_matrix = [] 
     line_edges = [0.0]
     # line_edges = []
->>>>>>> dev
 
     for sen1, sen2 in itertools.product(lines, repeat=2):
         sen1 = sen1.strip()
@@ -164,10 +147,7 @@ def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) ->
         if len(line_edges) == n_lines + 1:
             distance_matrix.append(line_edges)
             line_edges = [0.0]
-<<<<<<< HEAD
-=======
             # line_edges = []
->>>>>>> dev
 
     distance_matrix = np.array(distance_matrix)
     # As per python-tsp doc, to obtain open TSP version, set first column to 0
@@ -179,12 +159,6 @@ def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) ->
 
     # Solve TSP
     logging.info("Solving TSP ...")
-<<<<<<< HEAD
-    permutation, _ = solve_tsp_dynamic_programming(distance_matrix)
-    permutation = [val - 1 for val in permutation[1:]]
-    sorted_data = [lines[i] for i in permutation]
-
-=======
     start = perf_counter()
     permutation, _ = solve_tsp_dynamic_programming(distance_matrix)
     # permutation, _ = solve_tsp_simulated_annealing(distance_matrix)
@@ -193,7 +167,6 @@ def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) ->
     sorted_data = [lines[i] for i in permutation]
 
     # print(f"TSP: {(end-start):.2f}")
->>>>>>> dev
     return sorted_data
 
 
@@ -221,18 +194,6 @@ def main(args) -> None:
     # Build model
     logging.info("Building model ...")
     model = build_model(
-<<<<<<< HEAD
-        czert=False,
-        vocab_size=len(tokenizer),
-        device=device,
-        seq_len=checkpoint["seq_len"],
-        out_features=516,
-        mlm_level=2,
-        sep=checkpoint["sep"],
-    )
-    model.load_state_dict(checkpoint["model_state_dict"])
-    model.mlm_head = None
-=======
         czert=checkpoint["czert"],
         vocab_size=len(tokenizer),
         device=device,
@@ -243,7 +204,6 @@ def main(args) -> None:
     )
     model.bert.load_state_dict(checkpoint["bert_state_dict"])
     model.nsp_head.load_state_dict(checkpoint["nsp_head_state_dict"])
->>>>>>> dev
     model = model.to(device)
     model.eval()
     logging.info("Model loaded.")
@@ -251,18 +211,6 @@ def main(args) -> None:
     # Load file
     logging.info("Loading input file ...")
     # raw_data = load_data(args.file)
-<<<<<<< HEAD
-    with open(BABICKA_PATH, "r") as f:
-        babicka = f.read().split("\n\n")
-    with open(BABICKA_SHUFFLED_PATH, "r") as f:
-        babicka_shuffled = f.read().split("\n\n")
-    logging.info("Input file loaded.")
-
-    # Run sorting
-    # sorted_data = sort_file(raw_data, tokenizer, model)
-    total_hits = 0
-    total_len = 0
-=======
 
     REGION_SIZE = 15
     with open(BABICKA_PATH, "r") as f:
@@ -276,15 +224,11 @@ def main(args) -> None:
     total_hits = 0
     total_len = 0
     # for region_s, region in tqdm(zip(babicka_shuffled, babicka)):
->>>>>>> dev
     for region_s, region in tqdm(zip(babicka_shuffled, babicka)):
         region = region.split("\n")
         region_s = region_s.split("\n")
         sorted_data = sort_file(region_s, tokenizer, model)
-<<<<<<< HEAD
-=======
         # sorted_data = sort_file_tsp_local(region_s, tokenizer, model)
->>>>>>> dev
         hits = compare_regions(region, sorted_data)
 
         total_hits += hits
