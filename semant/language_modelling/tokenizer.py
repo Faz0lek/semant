@@ -4,7 +4,7 @@ Date -- 24.05.2023
 Author -- Martin Kostelnik
 """
 
-from typing import Dict
+from typing import Dict, Optional
 from dataclasses import dataclass
 
 import torch
@@ -129,7 +129,7 @@ class LMTokenizer:
 
 
 def build_tokenizer(
-        path: str=None,
+        path: Optional[str]=None,
         seq_len: int=80,
         fixed_sep: bool=True,
         masking_prob: float=0.15,

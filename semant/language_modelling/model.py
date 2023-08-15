@@ -19,7 +19,7 @@ class CLSHead(nn.Module):
         input_size: int,
         n_layers: int = 1,
         hidden_size: int = 128,
-        activation: Callable = nn.ReLU,
+        activation: Callable = nn.ReLU(),
         output_size: int = 1,
         dropout_prob: float = 0.0,
     ):
@@ -142,7 +142,7 @@ def build_model(
     bert.resize_token_embeddings(vocab_size)
     n_features = bert.config.hidden_size
 
-    nsp_head = CLSHead(n_features)
+    nsp_head = CLSHead(input_size=n_features)
     mlm_head = CLSHead(n_features, output_size=vocab_size) if mlm_level == 2 else None
 
     model = LanguageModel(
