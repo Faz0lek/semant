@@ -10,6 +10,7 @@ import sys
 import itertools
 from typing import List
 from tqdm import tqdm
+import random
 
 import torch
 import numpy as np
@@ -18,11 +19,15 @@ from python_tsp.exact import solve_tsp_dynamic_programming
 from semant.language_modelling.model import build_model, LanguageModel
 from semant.language_modelling.tokenizer import build_tokenizer, LMTokenizer
 from semant.language_modelling.utils import load_data
-from semant.sorting.utils import compare_regions
+from semant.sorting.utils import compare_regions, split_into_regions
+
+from time import perf_counter
 
 
 BABICKA_PATH = r"/home/martin/semant/data/babicka/babicka.txt"
 BABICKA_SHUFFLED_PATH = r"/home/martin/semant/data/babicka/babicka-shuffled.txt"
+BABICKA_EASY_PATH = r"/home/martin/semant/data/babicka/babicka-easy.txt"
+BABICKA_10_PATH = r"/home/martin/semant/data/babicka/babicka_10.txt"
 
 
 def parse_arguments():
@@ -39,6 +44,74 @@ def parse_arguments():
     return args
 
 
+def sort_file_tsp_local(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) -> List[str]:
+    """Assumptions:
+           1. Errors are local, line that is on index 14 (out of 15) does not correctly belong on index 2
+
+    """
+    n_lines = len(lines)
+    idx_offsets = [-2, -1, 1, 2]
+
+    # Create distance matrix
+    logging.info("Creating distance matrix ...")
+    start = perf_counter()
+    DUMMY_DIST = 10.0
+    distance_matrix = [[0.0] + n_lines * [DUMMY_DIST]] # Initialize with dummy point
+    line_edges = [0.0] + [1.0] * n_lines
+
+    for idx, sen1 in enumerate(lines):
+        sen1 = sen1.strip()
+        line_edges[idx+1] = 0.0
+        
+        for offset in idx_offsets:
+            idx_ = idx + offset
+            if idx_ < 0:
+                continue
+
+            try:
+                sen2 = lines[idx_].strip()
+            except IndexError:
+                continue
+
+            tokenized_seq = tokenizer(sen1, sen2)
+            input_ids = tokenized_seq["input_ids"].to(model.device)
+            token_type_ids = tokenized_seq["token_type_ids"].to(model.device)
+            attention_mask = tokenized_seq["attention_mask"].to(model.device)
+
+            with torch.no_grad():
+                score = model(
+                    input_ids,
+                    token_type_ids=token_type_ids,
+                    attention_mask=attention_mask,
+                ).nsp_output.item()
+
+            line_edges[idx_ + 1] = score
+
+        distance_matrix.append(line_edges)
+        line_edges = [0.0] + [1.0] * n_lines
+
+    distance_matrix = np.array(distance_matrix)
+    # As per python-tsp doc, to obtain open TSP version, set first column to 0
+    distance_matrix[:, 0] = 0.0
+    end = perf_counter()
+    dmt = end - start
+    # print(distance_matrix.shape)
+    # with np.printoptions(precision=2, suppress=True):
+    #     print(distance_matrix)
+
+    # Solve TSP
+    logging.info("Solving TSP ...")
+    start = perf_counter()
+    permutation, _ = solve_tsp_dynamic_programming(distance_matrix)
+    permutation = [val - 1 for val in permutation[1:]]
+    sorted_data = [lines[i] for i in permutation]
+    end = perf_counter()
+    tspt = end - start
+    
+    print(f"Distance matrix: {dmt:.2f}\tTSP: {tspt:.2f}")
+    return sorted_data
+
+
 def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) -> List[str]:
     n_lines = len(lines)
 
@@ -46,7 +119,9 @@ def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) ->
     logging.info("Creating distance matrix ...")
     DUMMY_DIST = 10.0
     distance_matrix = [[0.0] + n_lines * [DUMMY_DIST]] # Initialize with dummy point
+    # distance_matrix = [] 
     line_edges = [0.0]
+    # line_edges = []
 
     for sen1, sen2 in itertools.product(lines, repeat=2):
         sen1 = sen1.strip()
@@ -72,6 +147,7 @@ def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) ->
         if len(line_edges) == n_lines + 1:
             distance_matrix.append(line_edges)
             line_edges = [0.0]
+            # line_edges = []
 
     distance_matrix = np.array(distance_matrix)
     # As per python-tsp doc, to obtain open TSP version, set first column to 0
@@ -83,10 +159,14 @@ def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) ->
 
     # Solve TSP
     logging.info("Solving TSP ...")
+    start = perf_counter()
     permutation, _ = solve_tsp_dynamic_programming(distance_matrix)
+    # permutation, _ = solve_tsp_simulated_annealing(distance_matrix)
+    end = perf_counter()
     permutation = [val - 1 for val in permutation[1:]]
     sorted_data = [lines[i] for i in permutation]
 
+    # print(f"TSP: {(end-start):.2f}")
     return sorted_data
 
 
@@ -131,20 +211,24 @@ def main(args) -> None:
     # Load file
     logging.info("Loading input file ...")
     # raw_data = load_data(args.file)
+
+    REGION_SIZE = 15
     with open(BABICKA_PATH, "r") as f:
-        babicka = f.read().split("\n\n")
-    with open(BABICKA_SHUFFLED_PATH, "r") as f:
-        babicka_shuffled = f.read().split("\n\n")
+        babicka = f.read()
+
+    babicka_shuffled = split_into_regions(babicka, REGION_SIZE, True)    
+    babicka = split_into_regions(babicka, REGION_SIZE)
     logging.info("Input file loaded.")
 
     # Run sorting
-    # sorted_data = sort_file(raw_data, tokenizer, model)
     total_hits = 0
     total_len = 0
+    # for region_s, region in tqdm(zip(babicka_shuffled, babicka)):
     for region_s, region in tqdm(zip(babicka_shuffled, babicka)):
         region = region.split("\n")
         region_s = region_s.split("\n")
         sorted_data = sort_file(region_s, tokenizer, model)
+        # sorted_data = sort_file_tsp_local(region_s, tokenizer, model)
         hits = compare_regions(region, sorted_data)
 
         total_hits += hits
