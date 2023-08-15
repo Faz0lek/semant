@@ -28,4 +28,3 @@ def split_into_regions(text: str | List[str], region_size: int, shuffle: bool = 
             random.shuffle(region)
 
     return ["\n".join(region) for region in regions]
-    

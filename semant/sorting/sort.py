@@ -111,7 +111,7 @@ def sort_file_tsp_local(lines: List[str], tokenizer: LMTokenizer, model: Languag
     print(f"Distance matrix: {dmt:.2f}\tTSP: {tspt:.2f}")
     return sorted_data
 
-
+  
 def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) -> List[str]:
     n_lines = len(lines)
 
@@ -147,6 +147,7 @@ def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) ->
         if len(line_edges) == n_lines + 1:
             distance_matrix.append(line_edges)
             line_edges = [0.0]
+
             # line_edges = []
 
     distance_matrix = np.array(distance_matrix)
@@ -159,6 +160,7 @@ def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) ->
 
     # Solve TSP
     logging.info("Solving TSP ...")
+
     start = perf_counter()
     permutation, _ = solve_tsp_dynamic_programming(distance_matrix)
     # permutation, _ = solve_tsp_simulated_annealing(distance_matrix)
@@ -167,6 +169,7 @@ def sort_file(lines: List[str], tokenizer: LMTokenizer, model: LanguageModel) ->
     sorted_data = [lines[i] for i in permutation]
 
     # print(f"TSP: {(end-start):.2f}")
+
     return sorted_data
 
 
@@ -204,6 +207,7 @@ def main(args) -> None:
     )
     model.bert.load_state_dict(checkpoint["bert_state_dict"])
     model.nsp_head.load_state_dict(checkpoint["nsp_head_state_dict"])
+
     model = model.to(device)
     model.eval()
     logging.info("Model loaded.")
@@ -224,6 +228,7 @@ def main(args) -> None:
     total_hits = 0
     total_len = 0
     # for region_s, region in tqdm(zip(babicka_shuffled, babicka)):
+
     for region_s, region in tqdm(zip(babicka_shuffled, babicka)):
         region = region.split("\n")
         region_s = region_s.split("\n")
