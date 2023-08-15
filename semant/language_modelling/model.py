@@ -4,8 +4,7 @@ Date -- 24.05.2023
 Author -- Martin Kostelnik
 """
 
-import typing
-from dataclasses import dataclass
+from typing import Callable, Optional
 
 from torch import nn
 from transformers import BertConfig, BertModel
@@ -20,7 +19,7 @@ class CLSHead(nn.Module):
         input_size: int,
         n_layers: int = 1,
         hidden_size: int = 128,
-        activation: typing.Callable = nn.ReLU,
+        activation: Callable = nn.ReLU(),
         output_size: int = 1,
         dropout_prob: float = 0.0,
     ):
@@ -31,6 +30,7 @@ class CLSHead(nn.Module):
         self.n_layers = n_layers
         self.hidden_size = hidden_size
         self.activation = activation
+        self.dropout_prob = dropout_prob
 
         self.layers = nn.ModuleList()
 
@@ -72,8 +72,8 @@ class LanguageModel(nn.Module):
         bert: BertModel,
         device,
         name: str,
-        mlm_head: CLSHead = None,
-        nsp_head: CLSHead = None,
+        nsp_head: CLSHead,
+        mlm_head: Optional[CLSHead] = None,
         seq_len: int = 128,
         sep: bool = False,
         dropout_prob: float = 0.1,
@@ -142,15 +142,15 @@ def build_model(
     bert.resize_token_embeddings(vocab_size)
     n_features = bert.config.hidden_size
 
-    nsp_head = CLSHead(n_features)
+    nsp_head = CLSHead(input_size=n_features)
     mlm_head = CLSHead(n_features, output_size=vocab_size) if mlm_level == 2 else None
 
     model = LanguageModel(
         bert,
         device,
         name,
-        mlm_head,
         nsp_head,
+        mlm_head,
         seq_len,
         sep,
     )

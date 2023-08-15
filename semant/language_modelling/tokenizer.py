@@ -4,7 +4,11 @@ Date -- 24.05.2023
 Author -- Martin Kostelnik
 """
 
+<<<<<<< HEAD
 from typing import Dict
+=======
+from typing import Dict, Optional
+>>>>>>> dev
 from dataclasses import dataclass
 
 import torch
@@ -129,7 +133,11 @@ class LMTokenizer:
 
 
 def build_tokenizer(
+<<<<<<< HEAD
         path: str=None,
+=======
+        path: Optional[str]=None,
+>>>>>>> dev
         seq_len: int=80,
         fixed_sep: bool=True,
         masking_prob: float=0.15,

@@ -17,6 +17,11 @@ from semant.language_modelling.model import build_model
 from semant.language_modelling.utils import n_params
 from semant.language_modelling.trainer import Trainer, TrainerSettings
 
+<<<<<<< HEAD
+=======
+from safe_gpu import safe_gpu
+
+>>>>>>> dev
 
 def parse_arguments():
     print(' '.join(sys.argv))
@@ -127,5 +132,9 @@ def main(args):
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
+=======
+    safe_gpu.claim_gpus()
+>>>>>>> dev
     args = parse_arguments()
     main(args)

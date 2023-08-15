@@ -11,3 +11,7 @@ evaluation.pdf
 tokenizers/
 models-backup/
 models_tmp/
+<<<<<<< HEAD
+=======
+models_ft/
+>>>>>>> dev
