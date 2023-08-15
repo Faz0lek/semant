@@ -9,7 +9,7 @@ BASE=/home/martin/semant
 source $BASE/venv/bin/activate
 
 SCRIPTS_DIR=$BASE/semant/language_modelling
-MODEL_PATH=$BASE/models_tmp/checkpoint_1000.pth
+MODEL_PATH=$BASE/models/lm72.pth
 SAVE_DIR=$BASE/models_tmp
 
 mkdir -p $SAVE_DIR
@@ -20,7 +20,7 @@ python -u $SCRIPTS_DIR/resume_training.py \
     --test $BASE/data/books/books-dataset.tst \
     --split 0.8 \
     --mlm-level 0 \
-    --epochs 12 \
+    --epochs 2 \
     --steps 1000 \
     --batch-size 6 \
     --lr 5e-5 \
