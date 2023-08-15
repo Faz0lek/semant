@@ -6,10 +6,7 @@ Author -- Martin Kostelnik
 
 from typing import List
 from itertools import pairwise
-<<<<<<< HEAD
-=======
 import random
->>>>>>> dev
 
 
 def compare_regions(true_region: List[str], pred_region: List[str]) -> int:
@@ -20,8 +17,6 @@ def compare_regions(true_region: List[str], pred_region: List[str]) -> int:
 
     return hits
 
-<<<<<<< HEAD
-=======
 
 def split_into_regions(text: str | List[str], region_size: int, shuffle: bool = False) -> List[str]:
     lines = text.strip().split("\n") if isinstance(text, str) else text
@@ -34,4 +29,3 @@ def split_into_regions(text: str | List[str], region_size: int, shuffle: bool = 
 
     return ["\n".join(region) for region in regions]
     
->>>>>>> dev

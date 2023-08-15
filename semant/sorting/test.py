@@ -39,10 +39,6 @@ def main(args):
     logging.info("Loading checkpoint ...")
     checkpoint = torch.load(args.model_path)
     logging.info("Checkpoint loaded.")
-<<<<<<< HEAD
-
-=======
->>>>>>> dev
     # Build tokenizer
     logging.info("Loading tokenizer ...")
     tokenizer = build_tokenizer(
@@ -56,18 +52,6 @@ def main(args):
     # Build model
     logging.info("Building model ...")
     model = build_model(
-<<<<<<< HEAD
-        czert=False,
-        vocab_size=len(tokenizer),
-        device=device,
-        seq_len=checkpoint["seq_len"],
-        out_features=516,
-        mlm_level=2,
-        sep=checkpoint["sep"],
-    )
-    model.load_state_dict(checkpoint["model_state_dict"])
-    model.mlm_head = None
-=======
         czert=checkpoint["czert"],
         vocab_size=len(tokenizer),
         device=device,
@@ -78,7 +62,6 @@ def main(args):
     )
     model.bert.load_state_dict(checkpoint["bert_state_dict"])
     model.nsp_head.load_state_dict(checkpoint["nsp_head_state_dict"])
->>>>>>> dev
     model = model.to(device)
     model.eval()
     logging.info("Model loaded.")
