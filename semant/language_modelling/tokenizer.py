@@ -37,6 +37,7 @@ class LMTokenizer:
         self,
         sen1: str,
         sen2: str,
+        **kwargs,
     ) -> Dict[str, FloatTensor]:
         sen1 = sen1.strip()
         sen2 = sen2.strip()

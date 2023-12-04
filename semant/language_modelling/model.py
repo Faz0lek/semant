@@ -62,9 +62,11 @@ class LanguageModelOutput():
         self,
         mlm_output = None,
         nsp_output = None,
+        pooler_output = None,
     ):
         self.mlm_output = mlm_output
         self.nsp_output = nsp_output
+        self.pooler_output = pooler_output
 
 
 class LanguageModel(nn.Module):
@@ -112,6 +114,7 @@ class LanguageModel(nn.Module):
         # if self.sep, take SEP token embedding, else take pooled CLS token embedding
         nsp_features = outputs.last_hidden_state[:, self.seq_len // 2, :] if self.sep else outputs[1]
         nsp_features = self.dropout(nsp_features)
+        model_outputs.pooler_output = nsp_features
         model_outputs.nsp_output = self.nsp_head(nsp_features)
 
         if self.mlm_head:
