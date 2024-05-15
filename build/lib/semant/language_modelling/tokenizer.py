@@ -131,7 +131,7 @@ class LMTokenizer:
 
 def build_tokenizer(
         path: Optional[str]=None,
-        seq_len: int=65,
+        seq_len: int=80,
         fixed_sep: bool=True,
         masking_prob: float=0.15,
     ) -> LMTokenizer:
